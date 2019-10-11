@@ -11,6 +11,8 @@
 #include "em_gpio.h"
 #include "pinmap.h"
 
+#include "_stdio.h"
+
 void init_interrupts(void)
 {
     NVIC_DisableIRQ(GPIO_EVEN_IRQn);
@@ -42,6 +44,7 @@ void GPIO_EVEN_IRQHandler(void)
  */
 void GPIO_ODD_IRQHandler(void)
 {
+	PRINT("Asynchronous button!")
 	GPIO_PinOutClear(PORT_LED_GREEN, PIN_LED_GREEN);
     GPIO_IntClear(GPIO_IntGet());
 }

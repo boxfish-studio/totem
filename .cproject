@@ -108,10 +108,6 @@
                                     <listOptionValue builtIn="false" value="EFM32GG990F1024"/>
                                     									
                                     <listOptionValue builtIn="false" value="DEBUG_PRINT=1"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="EXTENDED_DEBUG=0"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="DBG_STACKTRACE=0"/>
                                     								
                                 </option>
                                 								
@@ -144,6 +140,8 @@
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Source/totem/FreeRTOSTrace/Include}&quot;"/>
                                     									
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Source/totem/hal/inc}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Source/totem/lib/_stdio/inc}&quot;"/>
                                     								
                                 </option>
                                 								
@@ -152,12 +150,6 @@
                                     <listOptionValue builtIn="false" value="EFM32GG990F1024"/>
                                     									
                                     <listOptionValue builtIn="false" value="DEBUG_PRINT=1"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="EXTENDED_DEBUG=0"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="DBG_STACKTRACE=0"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="CONFIG_APP=1"/>
                                     								
                                 </option>
                                 								

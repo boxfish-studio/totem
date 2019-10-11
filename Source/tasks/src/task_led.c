@@ -7,6 +7,8 @@
 
 #include "task_led.h"
 
+#include "_stdio.h"
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "em_gpio.h"
@@ -31,6 +33,7 @@ void task_led(void *args)
 
 		if (!GPIO_PinInGet(PORT_PUSH0, PIN_PUSH0)) {
 			GPIO_PinOutClear(PORT_LED_RED, PIN_LED_RED);
+			PRINT("Change!")
 		}
 
 		if (led_on)

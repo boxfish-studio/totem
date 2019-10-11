@@ -15,6 +15,8 @@
 
 #include "FreeRTOSConfig.h"
 
+#include "_stdio.h"
+
 #include "pinmap.h"
 
 static void set_core_speed(void);
@@ -29,6 +31,11 @@ void init_system(void)
 {
     // Internal function
     CHIP_Init();
+
+    // Configure SWD print for debug
+#if DEBUG_PRINT
+	setup_swd_print();
+#endif
 
     // Enable the needed clocks
     enable_clocks();
@@ -106,6 +113,6 @@ static inline void setup_gpio_pushbuttons(void)
     GPIO_PinModeSet(PORT_PUSH0, PIN_PUSH0, gpioModeInputPullFilter, 1);   //push0
     GPIO_PinModeSet(PORT_PUSH1, PIN_PUSH1,  gpioModeInputPullFilter, 1);   //push1
 
-    GPIO_IntConfig(PORT_PUSH1, PIN_PUSH1, 1, 0, 1);
+    GPIO_IntConfig(PORT_PUSH1, PIN_PUSH1, 0, 1, 1);
 
 }
