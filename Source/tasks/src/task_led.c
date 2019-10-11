@@ -15,10 +15,11 @@
 #include "pinmap.h"
 
 
-/**************************************************************************//**
- * @brief Simple task which is blinking led
- * @param *pParameters pointer to parameters passed to the function
- *****************************************************************************/
+/**
+ * @brief	Simple task which blinks a led
+ * @param 	*pParameters	Pointer to parameters passed to the function
+ * @return	None
+ */
 void task_led(void *args)
 {
 	uint8_t led_on = 0;

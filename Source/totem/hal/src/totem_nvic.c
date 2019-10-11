@@ -11,8 +11,15 @@
 #include "em_gpio.h"
 #include "pinmap.h"
 
+#include "FreeRTOS.h"
+
 #include "_stdio.h"
 
+/**
+ * @brief	Enable the interruptions used
+ * @param	None
+ * @return	None
+ */
 void init_interrupts(void)
 {
     NVIC_DisableIRQ(GPIO_EVEN_IRQn);
@@ -27,9 +34,9 @@ void init_interrupts(void)
 }
 
 /**
- * @brief IRQ Handler for EVEN GPIO interrupts
- * @param None
- * @return None
+ * @brief	IRQ Handler for EVEN GPIO interrupts
+ * @param	None
+ * @return	None
  */
 void GPIO_EVEN_IRQHandler(void)
 {
@@ -38,13 +45,14 @@ void GPIO_EVEN_IRQHandler(void)
 }
 
 /**
- * @brief IRQ Handler for ODD GPIO interrupts
- * @param None
- * @return None
+ * @brief	IRQ Handler for ODD GPIO interrupts
+ * @param	None
+ * @return	None
  */
 void GPIO_ODD_IRQHandler(void)
 {
 	PRINT("Asynchronous button!")
+	while (1) {}
 	GPIO_PinOutClear(PORT_LED_GREEN, PIN_LED_GREEN);
     GPIO_IntClear(GPIO_IntGet());
 }

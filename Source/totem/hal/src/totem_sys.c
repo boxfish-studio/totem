@@ -26,7 +26,9 @@ static void setup_gpio(void);
 static inline void setup_gpio_leds(void);
 static inline void setup_gpio_pushbuttons(void);
 
-// Initializes the system during boot
+/**
+ * @brief	Initializes the system during boot
+ */
 void init_system(void)
 {
     // Internal function
@@ -57,6 +59,9 @@ void init_system(void)
 #endif
 }
 
+/**
+ * @brief	Enables the clocks used in the system
+ */
 void enable_clocks(void)
 {
     // Enable GPIO clock
@@ -76,6 +81,8 @@ void enable_clocks(void)
     CMU_OscillatorEnable(cmuOsc_LFXO, true, true);
     /* Enabling internal RC Low Frequency Clock (32,768KHz) */
     //CMU_OscillatorEnable(cmuOsc_LFRCO, true, true);
+    /* Enabling internal Ultra Low Frequency RC Clock (1kHz) */
+    CMU_OscillatorEnable(cmuOsc_ULFRCO, true, true);
     /* Enabling external High Frequency Clock (48MHz) */
     CMU_OscillatorEnable(cmuOsc_HFXO, true, true);
 

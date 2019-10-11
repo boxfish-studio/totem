@@ -11,6 +11,11 @@
 
 #define USE_INTERNAL_DBG_CLK 0
 
+/**
+ * @brief	Prints in console the string pass in argument
+ * @param	*pcString	string to print
+ * @return	None
+ */
 void swd_print(const char *pcString)
 {
 	while(*pcString != 0x00) {
@@ -19,6 +24,11 @@ void swd_print(const char *pcString)
 	}
 }
 
+/**
+ * @brief	Setups the registers to print in the console with SWD interface
+ * @param	None
+ * @return	None
+ */
 void setup_swd_print(void)
 {
 	/* Enable GPIO clock. */
