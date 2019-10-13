@@ -8,6 +8,8 @@
 #ifndef TOTEM_NVIC_H_
 #define TOTEM_NVIC_H_
 
-void init_interrupts(void);
+#include "totem_common.h"
+
+void init_interrupts();
 
 #endif /* TOTEM_NVIC_H_ */

@@ -8,21 +8,11 @@
 #ifndef TOTEM_SYS_H_
 #define TOTEM_SYS_H_
 
-#include "FreeRTOS.h"
-#include "FreeRTOSConfig.h"
-#include "task.h"
-
-#include "pinmap.h"
-#include "_stdio.h"
+#include "totem_common.h"
 
 #include "totem_nvic.h"
 #include "totem_sleep.h"
 #include "totem_watchdog.h"
-
-#include "em_chip.h"
-#include "em_cmu.h"
-#include "em_gpio.h"
-#include "em_rmu.h"
 
 void totem_init();
 void totem_start();

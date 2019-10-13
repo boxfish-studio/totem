@@ -7,30 +7,21 @@
 
 #include "totem_nvic.h"
 
-#include "em_device.h"
-#include "em_gpio.h"
-#include "pinmap.h"
-
-#include "FreeRTOS.h"
-
-#include "_stdio.h"
-
 /**
  * @brief	Enable the interruptions used
  * @param	None
  * @return	None
  */
-void init_interrupts(void)
-{
-    NVIC_DisableIRQ(GPIO_EVEN_IRQn);
-    NVIC_ClearPendingIRQ(GPIO_EVEN_IRQn);
-    NVIC_SetPriority (GPIO_EVEN_IRQn, 6);
-    NVIC_EnableIRQ(GPIO_EVEN_IRQn);
+void init_interrupts() {
+	NVIC_DisableIRQ(GPIO_EVEN_IRQn);
+	NVIC_ClearPendingIRQ(GPIO_EVEN_IRQn);
+	NVIC_SetPriority(GPIO_EVEN_IRQn, 6);
+	NVIC_EnableIRQ(GPIO_EVEN_IRQn);
 
-    NVIC_DisableIRQ(GPIO_ODD_IRQn);
-    NVIC_ClearPendingIRQ(GPIO_ODD_IRQn);
-    NVIC_SetPriority (GPIO_ODD_IRQn, 4);
-    NVIC_EnableIRQ(GPIO_ODD_IRQn);
+	NVIC_DisableIRQ(GPIO_ODD_IRQn);
+	NVIC_ClearPendingIRQ(GPIO_ODD_IRQn);
+	NVIC_SetPriority(GPIO_ODD_IRQn, 4);
+	NVIC_EnableIRQ(GPIO_ODD_IRQn);
 }
 
 /**
@@ -38,10 +29,9 @@ void init_interrupts(void)
  * @param	None
  * @return	None
  */
-void GPIO_EVEN_IRQHandler(void)
-{
+void GPIO_EVEN_IRQHandler() {
 	GPIO_PinOutClear(PORT_LED_GREEN, PIN_LED_GREEN);
-    GPIO_IntClear(GPIO_IntGet());
+	GPIO_IntClear(GPIO_IntGet());
 }
 
 /**
@@ -49,10 +39,10 @@ void GPIO_EVEN_IRQHandler(void)
  * @param	None
  * @return	None
  */
-void GPIO_ODD_IRQHandler(void)
-{
+void GPIO_ODD_IRQHandler() {
 	PRINT("Asynchronous button!")
-	while (1) {}
+	while (1) {
+	}
 	GPIO_PinOutClear(PORT_LED_GREEN, PIN_LED_GREEN);
-    GPIO_IntClear(GPIO_IntGet());
+	GPIO_IntClear(GPIO_IntGet());
 }
