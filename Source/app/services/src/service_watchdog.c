@@ -13,7 +13,7 @@
 
 xTaskHandle handle_service_watchdog;
 
-void service_watchdog_start(const char * const service_name,
+void service_watchdog_setup(const char * const service_name,
 		UBaseType_t service_priority) {
 
 #if WATCHDOG_ENABLED

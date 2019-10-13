@@ -23,7 +23,7 @@ int main(void) {
 			TASK_PRIORITY_MEDIUM, &handle_led);
 
 	// Watchdog service
-	service_watchdog_start((const char *) "watchdog", TASK_PRIORITY_HIGH);
+	service_watchdog_setup((const char *) "watchdog", TASK_PRIORITY_HIGH);
 
 	totem_start();
 
