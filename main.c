@@ -10,14 +10,13 @@
 
 // Services
 #include "service_watchdog.h"
-#include "task_ex.h"
 #include "task_led.h"
 
 xTaskHandle handle_led;
 
 int main(void) {
 	// System initialization
-	init_system();
+	totem_init();
 
 	// LEDs service
 	xTaskCreate(task_led, (const char *) "ledblink", 150, NULL,
@@ -26,8 +25,7 @@ int main(void) {
 	// Watchdog service
 	service_watchdog_start((const char *) "watchdog", TASK_PRIORITY_HIGH);
 
-	// Start FreeRTOS Scheduler
-	vTaskStartScheduler();
+	totem_start();
 
 	return 0;
 }

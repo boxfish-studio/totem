@@ -8,7 +8,7 @@
 #ifndef _STDIO_H_
 #define _STDIO_H_
 
-#if DEBUG_PRINT
+#if PRINT_ENABLED
     #define PRINT(str) swd_print(str);
 #else
     #define PRINT(str)
