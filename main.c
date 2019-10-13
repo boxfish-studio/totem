@@ -5,32 +5,29 @@
  *      Author: Miguel Villalba <mvillalba@boxfish.studio>
  */
 
+// Totem SDK
 #include "totem_sys.h"
-#include "FreeRTOS.h"
 
-// Tasks
-#include "task_led.h"
-#include "task_watchdog.h"
+// Services
+#include "service_watchdog.h"
 #include "task_ex.h"
+#include "task_led.h"
 
 xTaskHandle handle_led;
-xTaskHandle handle_watchdog;
 
-int main(void)
-{
-    // System initialization
+int main(void) {
+	// System initialization
 	init_system();
 
-    // LEDs
-    xTaskCreate(task_led, (const char *) "ledblink", 150, NULL, TASK_PRIORITY_MEDIUM, &handle_led);
+	// LEDs service
+	xTaskCreate(task_led, (const char *) "ledblink", 150, NULL,
+			TASK_PRIORITY_MEDIUM, &handle_led);
 
-    // Watchdog
-#if WATCHDOG_ACTIVE
-    xTaskCreate(task_watchdog, (const char *) "watchdog", 400, NULL, TASK_PRIORITY_HIGH, &handle_watchdog);
-#endif
+	// Watchdog service
+	service_watchdog_start((const char *) "watchdog", TASK_PRIORITY_HIGH);
 
-    // Start FreeRTOS Scheduler
-    vTaskStartScheduler();
+	// Start FreeRTOS Scheduler
+	vTaskStartScheduler();
 
-    return 0;
+	return 0;
 }

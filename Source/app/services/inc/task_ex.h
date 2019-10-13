@@ -13,7 +13,6 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-
 #define STACK_SIZE_FOR_TASK    (configMINIMAL_STACK_SIZE + 10)
 
 /* Defines for task priorities */
@@ -21,6 +20,5 @@
 #define TASK_PRIORITY_MEDIUM        (tskIDLE_PRIORITY + 2)
 #define TASK_PRIORITY_HIGH          (tskIDLE_PRIORITY + 3)
 #define TASK_PRIORITY_ULTRA_HIGH    (tskIDLE_PRIORITY + 4)
-
 
 #endif /* TASKS_EX_H_ */
