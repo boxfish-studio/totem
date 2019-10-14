@@ -1,11 +1,10 @@
 /***************************************************************************//**
  * @file em_aes.h
- * @brief Advanced encryption standard (AES) accelerator peripheral API for
- *   EFM32.
- * @version 3.20.13
+ * @brief Advanced encryption standard (AES) accelerator peripheral API.
+ * @version 5.1.2
  *******************************************************************************
  * @section License
- * <b>(C) Copyright 2014 Silicon Labs, http://www.silabs.com</b>
+ * <b>Copyright 2016 Silicon Laboratories, Inc. http://www.silabs.com</b>
  *******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -31,9 +30,8 @@
  *
  ******************************************************************************/
 
-
-#ifndef __SILICON_LABS_EM_AES_H_
-#define __SILICON_LABS_EM_AES_H_
+#ifndef EM_AES_H
+#define EM_AES_H
 
 #include "em_device.h"
 #if defined(AES_COUNT) && (AES_COUNT > 0)
@@ -45,12 +43,62 @@ extern "C" {
 #endif
 
 /***************************************************************************//**
- * @addtogroup EM_Library
+ * @addtogroup emlib
  * @{
  ******************************************************************************/
 
 /***************************************************************************//**
  * @addtogroup AES
+ * @brief Advanced Encryption Standard Accelerator (AES) Peripheral API.
+ *
+ * @details
+ *   The AES peripheral supports AES block cipher encryption and decryption with
+ *   128 bit and 256 bit keys. The following block cipher modes are supported:
+ *   @li CBC - Cipher Block Chaining mode
+ *   @li CFB - Cipher Feedback mode
+ *   @li CTR - Counter mode
+ *   @li ECB - Electronic Code Book mode
+ *   @li OFB - Output Feedback mode
+ *
+ *   The following input/output notations should be noted:
+ *
+ *   @li Input/output data (plaintext, ciphertext, key etc) are treated as
+ *     byte arrays, starting with most significant byte. Ie, 32 bytes of
+ *     plaintext (B0...B31) is located in memory in the same order, with B0 at
+ *     the lower address and B31 at the higher address.
+ *
+ *   @li Byte arrays must always be a multiple of AES block size, ie a multiple
+ *     of 16. Padding, if required, is done at the end of the byte array.
+ *
+ *   @li Byte arrays should be word (32 bit) aligned for performance
+ *     considerations, since the array is accessed with 32 bit access type.
+ *     The Cortex-M supports unaligned accesses, but with a performance penalty.
+ *
+ *   @li It is possible to specify the same output buffer as input buffer
+ *     as long as they point to the same address. In that case the provided input
+ *     buffer is replaced with the encrypted/decrypted output. Notice that the
+ *     buffers must be exactly overlapping. If partly overlapping, the
+ *     behaviour is undefined.
+ *
+ *   It is up to the user to use a cipher mode according to its requirements
+ *   in order to not break security. Please refer to specific cipher mode
+ *   theory for details.
+ *
+ *   References:
+ *   @li Wikipedia - Cipher modes, http://en.wikipedia.org/wiki/Cipher_modes
+ *
+ *   @li Recommendation for Block Cipher Modes of Operation,
+ *      NIST Special Publication 800-38A, 2001 Edition,
+ *      http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf
+ *
+ *  E.g. the following example shows how to perform an AES-128 CBC encryption:
+ *
+ *  Enable clocks:
+ *  @include em_aes_clock_enable.c
+ *
+ *  Execute AES-128 CBC encryption:
+ *  @include em_aes_basic_usage.c
+ *
  * @{
  ******************************************************************************/
 
@@ -201,7 +249,30 @@ __STATIC_INLINE void AES_IntEnable(uint32_t flags)
  ******************************************************************************/
 __STATIC_INLINE uint32_t AES_IntGet(void)
 {
-  return(AES->IF);
+  return AES->IF;
+}
+
+
+/***************************************************************************//**
+ * @brief
+ *   Get enabled and pending AES interrupt flags.
+ *   Useful for handling more interrupt sources in the same interrupt handler.
+ *
+ * @note
+ *   Interrupt flags are not cleared by the use of this function.
+ *
+ * @return
+ *   Pending and enabled AES interrupt sources
+ *   The return value is the bitwise AND of
+ *   - the enabled interrupt sources in AES_IEN and
+ *   - the pending interrupt flags AES_IF
+ ******************************************************************************/
+__STATIC_INLINE uint32_t AES_IntGetEnabled(void)
+{
+  uint32_t ien;
+
+  ien = AES->IEN;
+  return AES->IF & ien;
 }
 
 
@@ -235,13 +306,13 @@ void AES_OFB256(uint8_t *out,
 
 
 /** @} (end addtogroup AES) */
-/** @} (end addtogroup EM_Library) */
+/** @} (end addtogroup emlib) */
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* defined(AES_COUNT) && (AES_COUNT > 0) */
-#endif /* __SILICON_LABS_EM_AES_H_ */
+#endif /* EM_AES_H */
 
 

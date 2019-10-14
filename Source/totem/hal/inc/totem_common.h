@@ -14,6 +14,7 @@
 
 #include "pinmap.h"
 #include "_stdio.h"
+#include "trace.h"
 
 #include "em_chip.h"
 #include "em_cmu.h"

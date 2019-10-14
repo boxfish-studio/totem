@@ -1,25 +1,20 @@
 /*
- * task_led.c
+ * service_led.c
  *
  *  Created on: Oct 10, 2019
  *      Author: Miguel Villalba <mvillalba@boxfish.studio>
  */
 
-#include "task_led.h"
+#include "service_led.h"
 
-#include "_stdio.h"
-#include "trace.h"
-
-#include "FreeRTOS.h"
-#include "task.h"
-#include "em_gpio.h"
-#include "pinmap.h"
+static xTaskHandle handle_led;
 
 /**
  *
  */
-void task_led_setup(void *args) {
-	return;
+void service_led_setup(const char * service_name, UBaseType_t service_priority)
+{
+	xTaskCreate(service_led, service_name, 150, NULL, service_priority, &handle_led);
 }
 
 /**
@@ -28,11 +23,10 @@ void task_led_setup(void *args) {
  * @return	None
  */
 
-void task_led_start(void *args) {
+void service_led(void *args) {
 	uint8_t led_on = 0;
 
-	traceString stackTrace = INIT_STACKTRACE("LED")
-	;
+	traceString stackTrace = INIT_STACKTRACE("LED");
 
 	for (;;) {
 		vTaskDelay(500 / portTICK_RATE_MS); //delay of 500ms

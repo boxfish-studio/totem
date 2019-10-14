@@ -11,14 +11,13 @@
 
 #define NEXT_CLEAR		(1 << (3+INITIAL_TIMEOUT))/4	// Wait a fourth part of timeout watchdog
 
-xTaskHandle handle_service_watchdog;
+static xTaskHandle handle_service_watchdog;
 
 void service_watchdog_setup(const char * const service_name,
 		UBaseType_t service_priority) {
 
 #if WATCHDOG_ENABLED
-	xTaskCreate(service_watchdog, service_name, 400, NULL, service_priority,
-			&handle_service_watchdog);
+	xTaskCreate(service_watchdog, service_name, 400, NULL, service_priority, &handle_service_watchdog);
 #endif
 }
 

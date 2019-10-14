@@ -1,10 +1,10 @@
 /***************************************************************************//**
  * @file em_prs.h
  * @brief Peripheral Reflex System (PRS) peripheral API
- * @version 3.20.13
+ * @version 5.1.2
  *******************************************************************************
  * @section License
- * <b>(C) Copyright 2014 Silicon Labs, http://www.silabs.com</b>
+ * <b>Copyright 2016 Silicon Laboratories, Inc. http://www.silabs.com</b>
  *******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -30,9 +30,8 @@
  *
  ******************************************************************************/
 
-
-#ifndef __SILICON_LABS_EM_PRS_H_
-#define __SILICON_LABS_EM_PRS_H_
+#ifndef EM_PRS_H
+#define EM_PRS_H
 
 #include "em_device.h"
 #if defined(PRS_COUNT) && (PRS_COUNT > 0)
@@ -42,7 +41,7 @@ extern "C" {
 #endif
 
 /***************************************************************************//**
- * @addtogroup EM_Library
+ * @addtogroup emlib
  * @{
  ******************************************************************************/
 
@@ -121,11 +120,11 @@ void PRS_SourceAsyncSignalSet(unsigned int ch,
 #endif
 
 /** @} (end addtogroup PRS) */
-/** @} (end addtogroup EM_Library) */
+/** @} (end addtogroup emlib) */
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* defined(PRS_COUNT) && (PRS_COUNT > 0) */
-#endif /* __SILICON_LABS_EM_PRS_H_ */
+#endif /* EM_PRS_H */

@@ -12,7 +12,7 @@
 
 #define WATCHDOG_ENABLED 1
 
-void service_watchdog_setup(const char * const, UBaseType_t uxPriority);
+void service_watchdog_setup(const char * serviceName, UBaseType_t service_priority);
 void service_watchdog(void *args);
 
 #endif /* SERVICE_WATCHDOG_H_ */

@@ -9,10 +9,8 @@
 #include "totem_sys.h"
 
 // Services
+#include "service_led.h"
 #include "service_watchdog.h"
-#include "task_led.h"
-
-xTaskHandle handle_led;
 
 int main(void) {
 	// System initialization
@@ -23,8 +21,7 @@ int main(void) {
 #endif
 
 	// LEDs service
-	xTaskCreate(task_led, (const char *) "ledblink", 150, NULL,
-			TASK_PRIORITY_MEDIUM, &handle_led);
+	service_led_setup((const char *) "blink_led", TASK_PRIORITY_MEDIUM);
 
 	// Watchdog service
 	service_watchdog_setup((const char *) "watchdog", TASK_PRIORITY_HIGH);

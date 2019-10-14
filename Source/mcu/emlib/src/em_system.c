@@ -1,10 +1,10 @@
 /***************************************************************************//**
  * @file em_system.c
  * @brief System Peripheral API
- * @version 3.20.13
+ * @version 5.1.2
  *******************************************************************************
  * @section License
- * <b>(C) Copyright 2014 Silicon Labs, http://www.silabs.com</b>
+ * <b>Copyright 2016 Silicon Laboratories, Inc. http://www.silabs.com</b>
  *******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -30,18 +30,17 @@
  *
  ******************************************************************************/
 
-
 #include "em_system.h"
 #include "em_assert.h"
+#include <stddef.h>
 
 /***************************************************************************//**
- * @addtogroup EM_Library
+ * @addtogroup emlib
  * @{
  ******************************************************************************/
 
 /***************************************************************************//**
  * @addtogroup SYSTEM
- * @brief System Peripheral API
  * @{
  ******************************************************************************/
 
@@ -60,60 +59,60 @@ void SYSTEM_ChipRevisionGet(SYSTEM_ChipRevision_TypeDef *rev)
 {
   uint8_t tmp;
 
-  EFM_ASSERT(rev);  
-  
+  EFM_ASSERT(rev);
+
   /* CHIP FAMILY bit [5:2] */
-  tmp  = (((ROMTABLE->PID1 & _ROMTABLE_PID1_FAMILYMSB_MASK) >> _ROMTABLE_PID1_FAMILYMSB_SHIFT) << 2);           
+  tmp  = (((ROMTABLE->PID1 & _ROMTABLE_PID1_FAMILYMSB_MASK) >> _ROMTABLE_PID1_FAMILYMSB_SHIFT) << 2);
   /* CHIP FAMILY bit [1:0] */
-  tmp |=  ((ROMTABLE->PID0 & _ROMTABLE_PID0_FAMILYLSB_MASK) >> _ROMTABLE_PID0_FAMILYLSB_SHIFT);                 
+  tmp |=  ((ROMTABLE->PID0 & _ROMTABLE_PID0_FAMILYLSB_MASK) >> _ROMTABLE_PID0_FAMILYLSB_SHIFT);
   rev->family = tmp;
 
   /* CHIP MAJOR bit [3:0] */
-  rev->major = (ROMTABLE->PID0 & _ROMTABLE_PID0_REVMAJOR_MASK) >> _ROMTABLE_PID0_REVMAJOR_SHIFT;                
+  rev->major = (ROMTABLE->PID0 & _ROMTABLE_PID0_REVMAJOR_MASK) >> _ROMTABLE_PID0_REVMAJOR_SHIFT;
 
   /* CHIP MINOR bit [7:4] */
-  tmp  = (((ROMTABLE->PID2 & _ROMTABLE_PID2_REVMINORMSB_MASK) >> _ROMTABLE_PID2_REVMINORMSB_SHIFT) << 4);  
+  tmp  = (((ROMTABLE->PID2 & _ROMTABLE_PID2_REVMINORMSB_MASK) >> _ROMTABLE_PID2_REVMINORMSB_SHIFT) << 4);
   /* CHIP MINOR bit [3:0] */
-  tmp |=  ((ROMTABLE->PID3 & _ROMTABLE_PID3_REVMINORLSB_MASK) >> _ROMTABLE_PID3_REVMINORLSB_SHIFT);             
+  tmp |=  ((ROMTABLE->PID3 & _ROMTABLE_PID3_REVMINORLSB_MASK) >> _ROMTABLE_PID3_REVMINORLSB_SHIFT);
   rev->minor = tmp;
 }
+
 
 /***************************************************************************//**
  * @brief
  *    Get factory calibration value for a given peripheral register.
  *
  * @param[in] regAddress
- *    Address of register to get a calibration value for.
+ *    Peripheral calibration register address to get calibration value for. If
+ *    a calibration value is found then this register is updated with the
+ *    calibration value.
  *
  * @return
- *    Calibration value for the requested register.
+ *    True if a calibration value exists, false otherwise.
  ******************************************************************************/
-uint32_t SYSTEM_GetCalibrationValue(volatile uint32_t *regAddress)
+bool SYSTEM_GetCalibrationValue(volatile uint32_t *regAddress)
 {
-  int               regCount;
-  CALIBRATE_TypeDef *p;
+  SYSTEM_CalAddrVal_TypeDef * p, * end;
 
-  regCount = 1;
-  p        = CALIBRATE;
+  p   = (SYSTEM_CalAddrVal_TypeDef *)(DEVINFO_BASE & 0xFFFFF000);
+  end = (SYSTEM_CalAddrVal_TypeDef *)DEVINFO_BASE;
 
-  for (;; )
+  for ( ; p < end; p++)
   {
-    if ((regCount > CALIBRATE_MAX_REGISTERS) ||
-        (p->VALUE == 0xFFFFFFFF))
+    if (p->address == 0xFFFFFFFF)
     {
-      EFM_ASSERT(false);
-      return 0;                 /* End of device calibration table reached. */
+      /* Found table terminator */
+      return false;
     }
-
-    if (p->ADDRESS == (uint32_t)regAddress)
+    if (p->address == (uint32_t)regAddress)
     {
-      return p->VALUE;          /* Calibration value found ! */
+      *regAddress = p->calValue;
+      return true;
     }
-
-    p++;
-    regCount++;
   }
+  /* Nothing found for regAddress */
+  return false;
 }
 
 /** @} (end addtogroup SYSTEM) */
-/** @} (end addtogroup EM_Library) */
+/** @} (end addtogroup emlib) */

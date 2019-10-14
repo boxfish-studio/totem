@@ -1,10 +1,10 @@
 /***************************************************************************//**
  * @file em_dbg.c
  * @brief Debug (DBG) Peripheral API
- * @version 3.20.13
+ * @version 5.1.2
  *******************************************************************************
  * @section License
- * <b>(C) Copyright 2014 Silicon Labs, http://www.silabs.com</b>
+ * <b>Copyright 2016 Silicon Laboratories, Inc. http://www.silabs.com</b>
  *******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -32,20 +32,24 @@
 
 #include "em_dbg.h"
 
-#if defined ( CoreDebug_DHCSR_C_DEBUGEN_Msk )
+#if defined( CoreDebug_DHCSR_C_DEBUGEN_Msk )
 
 #include "em_assert.h"
 #include "em_cmu.h"
 #include "em_gpio.h"
 
 /***************************************************************************//**
- * @addtogroup EM_Library
+ * @addtogroup emlib
  * @{
  ******************************************************************************/
 
 /***************************************************************************//**
  * @addtogroup DBG
  * @brief Debug (DBG) Peripheral API
+ * @details
+ *  This module contains functions to control the DBG peripheral of Silicon
+ *  Labs 32-bit MCUs and SoCs. The Debug Interface is used to program and debug
+ *  Silicon Labs devices.
  * @{
  ******************************************************************************/
 
@@ -53,7 +57,7 @@
  **************************   GLOBAL FUNCTIONS   *******************************
  ******************************************************************************/
 
-#if defined( GPIO_ROUTE_SWOPEN )
+#if defined( GPIO_ROUTE_SWOPEN ) || defined( GPIO_ROUTEPEN_SWVPEN )
 /***************************************************************************//**
  * @brief
  *   Enable Serial Wire Output (SWO) pin.
@@ -92,8 +96,15 @@ void DBG_SWOEnable(unsigned int location)
 
   EFM_ASSERT(location < AFCHANLOC_MAX);
 
+#if defined ( AF_DBG_SWO_PORT )
   port = AF_DBG_SWO_PORT(location);
   pin  = AF_DBG_SWO_PIN(location);
+#elif defined (AF_DBG_SWV_PORT )
+  port = AF_DBG_SWV_PORT(location);
+  pin  = AF_DBG_SWV_PIN(location);
+#else
+#warning "AF debug port is not defined."
+#endif
 
   /* Port/pin location not defined for device? */
   if ((pin < 0) || (port < 0))
@@ -115,5 +126,5 @@ void DBG_SWOEnable(unsigned int location)
 #endif
 
 /** @} (end addtogroup DBG) */
-/** @} (end addtogroup EM_Library) */
-#endif /* defined ( CoreDebug_DHCSR_C_DEBUGEN_Msk ) */
+/** @} (end addtogroup emlib) */
+#endif /* defined( CoreDebug_DHCSR_C_DEBUGEN_Msk ) */

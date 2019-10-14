@@ -7,6 +7,8 @@
 
 #include "totem_sys.h"
 
+#include "hid.h"
+
 void enable_clocks(void);
 void setup_gpio(void);
 
@@ -37,6 +39,8 @@ void totem_init() {
 	/* do not let to sleep deeper than define */
 	SLEEP_SleepBlockBegin((SLEEP_EnergyMode_t)(configSLEEP_MODE+1));
 #endif
+
+	HID_Init(NULL);
 }
 
 void totem_start() {

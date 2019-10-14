@@ -1,10 +1,10 @@
 /***************************************************************************//**
  * @file em_rtc.h
  * @brief Real Time Counter (RTC) peripheral API
- * @version 3.20.13
+ * @version 5.1.2
  *******************************************************************************
  * @section License
- * <b>(C) Copyright 2014 Silicon Labs, http://www.silabs.com</b>
+ * <b>Copyright 2016 Silicon Laboratories, Inc. http://www.silabs.com</b>
  *******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -30,9 +30,8 @@
  *
  ******************************************************************************/
 
-
-#ifndef __SILICON_LABS_EM_RTC_H_
-#define __SILICON_LABS_EM_RTC_H_
+#ifndef EM_RTC_H
+#define EM_RTC_H
 
 #include "em_device.h"
 #if defined(RTC_COUNT) && (RTC_COUNT > 0)
@@ -44,7 +43,7 @@ extern "C" {
 #endif
 
 /***************************************************************************//**
- * @addtogroup EM_Library
+ * @addtogroup emlib
  * @{
  ******************************************************************************/
 
@@ -66,11 +65,12 @@ typedef struct
 } RTC_Init_TypeDef;
 
 /** Suggested default config for RTC init structure. */
-#define RTC_INIT_DEFAULT                                       \
-  { true,    /* Start counting when init done */               \
-    false,   /* Disable updating during debug halt */          \
-    true     /* Restart counting from 0 when reaching COMP0 */ \
-  }
+#define RTC_INIT_DEFAULT                                     \
+{                                                            \
+  true,    /* Start counting when init done */               \
+  false,   /* Disable updating during debug halt */          \
+  true     /* Restart counting from 0 when reaching COMP0 */ \
+}
 
 
 /*******************************************************************************
@@ -89,8 +89,22 @@ void RTC_CompareSet(unsigned int comp, uint32_t value);
  ******************************************************************************/
 __STATIC_INLINE uint32_t RTC_CounterGet(void)
 {
-  return(RTC->CNT);
+  return RTC->CNT;
 }
+
+#if !defined(_EFM32_GECKO_FAMILY)
+/***************************************************************************//**
+ * @brief
+ *   Set the RTC counter value.
+ *
+ * @param[in] value
+ *   The new RTC counter value.
+ ******************************************************************************/
+__STATIC_INLINE void RTC_CounterSet(uint32_t value)
+{
+  RTC->CNT = value;
+}
+#endif
 
 void RTC_CounterReset(void);
 void RTC_Enable(bool enable);
@@ -123,7 +137,7 @@ __STATIC_INLINE void RTC_IntClear(uint32_t flags)
  ******************************************************************************/
 __STATIC_INLINE void RTC_IntDisable(uint32_t flags)
 {
-  RTC->IEN &= ~(flags);
+  RTC->IEN &= ~flags;
 }
 
 
@@ -160,7 +174,30 @@ __STATIC_INLINE void RTC_IntEnable(uint32_t flags)
  ******************************************************************************/
 __STATIC_INLINE uint32_t RTC_IntGet(void)
 {
-  return(RTC->IF);
+  return RTC->IF;
+}
+
+
+/***************************************************************************//**
+ * @brief
+ *   Get enabled and pending RTC interrupt flags.
+ *   Useful for handling more interrupt sources in the same interrupt handler.
+ *
+ * @note
+ *   Interrupt flags are not cleared by the use of this function.
+ *
+ * @return
+ *   Pending and enabled RTC interrupt sources
+ *   The return value is the bitwise AND of
+ *   - the enabled interrupt sources in RTC_IEN and
+ *   - the pending interrupt flags RTC_IF
+ ******************************************************************************/
+__STATIC_INLINE uint32_t RTC_IntGetEnabled(void)
+{
+  uint32_t ien;
+
+  ien = RTC->IEN;
+  return RTC->IF & ien;
 }
 
 
@@ -181,11 +218,11 @@ __STATIC_INLINE void RTC_IntSet(uint32_t flags)
 void RTC_Reset(void);
 
 /** @} (end addtogroup RTC) */
-/** @} (end addtogroup EM_Library) */
+/** @} (end addtogroup emlib) */
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* defined(RTC_COUNT) && (RTC_COUNT > 0) */
-#endif /* __SILICON_LABS_EM_RTC_H_ */
+#endif /* EM_RTC_H */
