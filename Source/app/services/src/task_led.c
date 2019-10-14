@@ -8,6 +8,7 @@
 #include "task_led.h"
 
 #include "_stdio.h"
+#include "trace.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -15,12 +16,23 @@
 #include "pinmap.h"
 
 /**
+ *
+ */
+void task_led_setup(void *args) {
+	return;
+}
+
+/**
  * @brief	Simple task which blinks a led
  * @param 	*pParameters	Pointer to parameters passed to the function
  * @return	None
  */
-void task_led(void *args) {
+
+void task_led_start(void *args) {
 	uint8_t led_on = 0;
+
+	traceString stackTrace = INIT_STACKTRACE("LED")
+	;
 
 	for (;;) {
 		vTaskDelay(500 / portTICK_RATE_MS); //delay of 500ms
@@ -31,12 +43,14 @@ void task_led(void *args) {
 
 		if (!GPIO_PinInGet(PORT_PUSH0, PIN_PUSH0)) {
 			GPIO_PinOutClear(PORT_LED_RED, PIN_LED_RED);
-			PRINT("Change!")
+			PRINT("Change!");
 		}
 
 		if (led_on)
 			GPIO_PinOutClear(PORT_LED_BLUE, PIN_LED_BLUE);
 
 		led_on = !led_on;
+
+		PRINT_STACKTRACE(stackTrace);
 	}
 }

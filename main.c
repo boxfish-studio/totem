@@ -18,6 +18,10 @@ int main(void) {
 	// System initialization
 	totem_init();
 
+#if DBG_STACKTRACE
+	vTraceEnable(TRC_START);
+#endif
+
 	// LEDs service
 	xTaskCreate(task_led, (const char *) "ledblink", 150, NULL,
 			TASK_PRIORITY_MEDIUM, &handle_led);

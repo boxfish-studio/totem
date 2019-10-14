@@ -208,7 +208,9 @@ extern "C" {
 #define xPortPendSVHandler     PendSV_Handler
 #define xPortSysTickHandler    SysTick_Handler
 
-#include "trcRecorder.h"
+#if configUSE_TRACE_FACILITY
+	#include "trcRecorder.h"
+#endif
 
 #ifdef __cplusplus
 }

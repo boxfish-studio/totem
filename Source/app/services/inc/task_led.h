@@ -8,6 +8,7 @@
 #ifndef TASK_LED_H_
 #define TASK_LED_H_
 
-void task_led(void *args);
+void task_led_setup(void *args);
+void task_led_start(void *args);
 
 #endif /* TASK_LED_H_ */
