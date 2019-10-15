@@ -2,7 +2,7 @@
  * main.c
  *
  *  Created on: Oct 9, 2019
- *      Author: Miguel Villalba <mvillalba@boxfish.studio>
+ *      Author: Miguel Villalba <mvillalba@boxfish.studio>, Agustin Tena <atena@boxfish.studio>
  */
 
 // Totem SDK

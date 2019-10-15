@@ -2,7 +2,7 @@
  * service_watchdog.h
  *
  *  Created on: Oct 11, 2019
- *      Author: Miguel Villalba <mvillalba@boxfish.studio>
+ *      Author: Miguel Villalba <mvillalba@boxfish.studio>, Agustin Tena <atena@boxfish.studio>
  */
 
 #ifndef SERVICE_WATCHDOG_H_
