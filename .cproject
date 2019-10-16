@@ -109,9 +109,9 @@
                                     									
                                     <listOptionValue builtIn="false" value="EFM32GG990F1024"/>
                                     									
-                                    <listOptionValue builtIn="false" value="DEBUG_PRINT=1"/>
+                                    <listOptionValue builtIn="false" value="PRINT_ENABLED=0"/>
                                     									
-                                    <listOptionValue builtIn="false" value="DBG_STACKTRACE=0"/>
+                                    <listOptionValue builtIn="false" value="DBG_STACKTRACE=1"/>
                                     								
                                 </option>
                                 								
@@ -161,9 +161,9 @@
                                     									
                                     <listOptionValue builtIn="false" value="EFM32GG990F1024"/>
                                     									
-                                    <listOptionValue builtIn="false" value="DEBUG_PRINT=1"/>
+                                    <listOptionValue builtIn="false" value="PRINT_ENABLED=0"/>
                                     									
-                                    <listOptionValue builtIn="false" value="DBG_STACKTRACE=0"/>
+                                    <listOptionValue builtIn="false" value="DBG_STACKTRACE=1"/>
                                     								
                                 </option>
                                 								

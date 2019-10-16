@@ -97,7 +97,7 @@ extern "C" {
  * TRC_RECORDER_MODE_SNAPSHOT
  * TRC_RECORDER_MODE_STREAMING
  ******************************************************************************/
-#define TRC_CFG_RECORDER_MODE TRC_RECORDER_MODE_SNAPSHOT
+#define TRC_CFG_RECORDER_MODE TRC_RECORDER_MODE_STREAMING
 
 /******************************************************************************
  * TRC_CFG_FREERTOS_VERSION
@@ -138,7 +138,7 @@ extern "C" {
  *
  * Default value is 1.
  *****************************************************************************/
-#define TRC_CFG_INCLUDE_MEMMANG_EVENTS 1
+#define TRC_CFG_INCLUDE_MEMMANG_EVENTS 0
 
  /******************************************************************************
  * TRC_CFG_INCLUDE_USER_EVENTS
@@ -178,7 +178,7 @@ extern "C" {
  * Note: tracing ISRs requires that you insert calls to vTraceStoreISRBegin
  * and vTraceStoreISREnd in your interrupt handlers.
  *****************************************************************************/
-#define TRC_CFG_INCLUDE_ISR_TRACING 1
+#define TRC_CFG_INCLUDE_ISR_TRACING 0
 
  /*****************************************************************************
  * TRC_CFG_INCLUDE_READY_EVENTS
@@ -206,7 +206,7 @@ extern "C" {
  *
  * Default value is 1.
  *****************************************************************************/
-#define TRC_CFG_INCLUDE_OSTICK_EVENTS 1
+#define TRC_CFG_INCLUDE_OSTICK_EVENTS 0
 
  /*****************************************************************************
  * TRC_CFG_INCLUDE_EVENT_GROUP_EVENTS
@@ -286,6 +286,9 @@ extern "C" {
  * Default value: 8
  *****************************************************************************/
 #define TRC_CFG_MAX_ISR_NESTING 8
+
+// define used to refer to the systick when is called to timestamp
+#define TRC_CFG_ARM_CM_USE_SYSTICK 1
 
 /* Specific configuration, depending on Streaming/Snapshot mode */
 #if (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_SNAPSHOT)

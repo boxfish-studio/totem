@@ -50,6 +50,7 @@
 extern "C" {
 #endif
 
+
 /*******************************************************************************
  * Configuration Macro: TRC_CFG_SYMBOL_TABLE_SLOTS
  *
@@ -63,7 +64,7 @@ extern "C" {
  * trace display will be affected. In that case, there will be warnings
  * (as User Events) from TzCtrl task, that monitors this.
  ******************************************************************************/
-#define TRC_CFG_SYMBOL_TABLE_SLOTS 40
+#define TRC_CFG_SYMBOL_TABLE_SLOTS 50
 
 /*******************************************************************************
  * Configuration Macro: TRC_CFG_SYMBOL_MAX_LENGTH
@@ -78,7 +79,7 @@ extern "C" {
  * which will affect the trace display. In that case, there will be warnings
  * (as User Events) from TzCtrl task, that monitors this.
  ******************************************************************************/
-#define TRC_CFG_SYMBOL_MAX_LENGTH 25
+#define TRC_CFG_SYMBOL_MAX_LENGTH 50
 
 /*******************************************************************************
  * Configuration Macro: TRC_CFG_OBJECT_DATA_SLOTS
@@ -87,7 +88,7 @@ extern "C" {
  * be stored at the same time. Must be sufficient for all tasks, otherwise there
  * will be warnings (as User Events) from TzCtrl task, that monitors this.
  ******************************************************************************/
-#define TRC_CFG_OBJECT_DATA_SLOTS 40
+#define TRC_CFG_OBJECT_DATA_SLOTS 20
 
 /*******************************************************************************
  * Configuration Macro: TRC_CFG_CTRL_TASK_STACK_SIZE

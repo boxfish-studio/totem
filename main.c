@@ -17,7 +17,7 @@ int main(void) {
 	totem_init();
 
 #if DBG_STACKTRACE
-	vTraceEnable(TRC_START);
+	vTraceEnable(TRC_INIT);
 #endif
 
 	// LEDs service
