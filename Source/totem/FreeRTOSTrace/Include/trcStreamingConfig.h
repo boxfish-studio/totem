@@ -50,7 +50,6 @@
 extern "C" {
 #endif
 
-
 /*******************************************************************************
  * Configuration Macro: TRC_CFG_SYMBOL_TABLE_SLOTS
  *

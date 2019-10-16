@@ -95,7 +95,6 @@ Revision: $Rev: 3892 $
 
 #define SEGGER_RTT_MAX_INTERRUPT_PRIORITY         (0x20)   // Interrupt priority to lock on SEGGER_RTT_LOCK on Cortex-M3/4 (Default: 0x20)
 
-
 /*********************************************************************
 *
 *       RTT lock configuration for SEGGER Embedded Studio, 

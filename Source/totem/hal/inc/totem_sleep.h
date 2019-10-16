@@ -65,7 +65,6 @@ extern "C" {
  *******************************   MACROS   ************************************
  ******************************************************************************/
 
-
 /*******************************************************************************
  ****************************   CONFIGURATION   ********************************
  ******************************************************************************/
@@ -96,27 +95,25 @@ extern "C" {
  ******************************************************************************/
 
 /** Status value used for showing the Energy Mode the device is currently in. */
-typedef enum
-{
-  /** Status value for EM0. */
-  sleepEM0 = 0,
+typedef enum {
+	/** Status value for EM0. */
+	sleepEM0 = 0,
 
-  /** Status value for EM1. */
-  sleepEM1 = 1,
+	/** Status value for EM1. */
+	sleepEM1 = 1,
 
-  /** Status value for EM2. */
-  sleepEM2 = 2,
+	/** Status value for EM2. */
+	sleepEM2 = 2,
 
-  /** Status value for EM3. */
-  sleepEM3 = 3,
+	/** Status value for EM3. */
+	sleepEM3 = 3,
 
-  /** Status value for EM4. */
-  sleepEM4 = 4
+	/** Status value for EM4. */
+	sleepEM4 = 4
 } SLEEP_EnergyMode_t;
 
 /** Callback function pointer type. */
 typedef void (*SLEEP_CbFuncPtr_t)(SLEEP_EnergyMode_t);
-
 
 /*******************************************************************************
  ******************************   PROTOTYPES   *********************************
@@ -181,7 +178,6 @@ SLEEP_EnergyMode_t SLEEP_LowestEnergyModeGet(void);
  ******************************************************************************/
 SLEEP_EnergyMode_t SLEEP_Sleep(void);
 
-
 /***************************************************************************//**
  * @brief
  *   Force the device to go to EM4 without doing any checks.
@@ -196,7 +192,6 @@ SLEEP_EnergyMode_t SLEEP_Sleep(void);
  *   EM4 wakeup callback.
  ******************************************************************************/
 void SLEEP_ForceSleepInEM4(void);
-
 
 /***************************************************************************//**
  * @brief
@@ -224,7 +219,6 @@ void SLEEP_ForceSleepInEM4(void);
  *   @li sleepEM3 - Begin to block the system from being set to EM3 (and EM4).
  ******************************************************************************/
 void SLEEP_SleepBlockBegin(SLEEP_EnergyMode_t eMode);
-
 
 /***************************************************************************//**
  * @brief
@@ -254,7 +248,6 @@ void SLEEP_SleepBlockBegin(SLEEP_EnergyMode_t eMode);
  *   @li sleepEM3 - End to block the system from being set to EM3 (and EM4).
  ******************************************************************************/
 void SLEEP_SleepBlockEnd(SLEEP_EnergyMode_t eMode);
-
 
 /** @} (end addtogroup SLEEP) */
 /** @} (end addtogroup EM_Drivers) */

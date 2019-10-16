@@ -2,7 +2,7 @@
  * service_watchdog.c
  *
  *  Created on: Oct 11, 2019
- *      Author: Miguel Villalba <mvillalba@boxfish.studio>
+ *      Author: Miguel Villalba <mvillalba@boxfish.studio>, Agustin Tena <atena@boxfish.studio>
  */
 
 #include "service_watchdog.h"
@@ -22,7 +22,7 @@ void service_watchdog_setup(const char * const service_name,
 }
 
 /**
- * @brief	Watchdog used to force a reset if there is a hard fault
+ * @brief	Simple service that initialize and feeds the watchdog peripheral
  * @param	*args	Arguments used to receive variables
  * @return	None
  */

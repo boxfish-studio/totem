@@ -12,14 +12,14 @@ static xTaskHandle handle_led;
 /**
  *
  */
-void service_led_setup(const char * service_name, UBaseType_t service_priority)
-{
-	xTaskCreate(service_led, service_name, 150, NULL, service_priority, &handle_led);
+void service_led_setup(const char * service_name, UBaseType_t service_priority) {
+	xTaskCreate(service_led, service_name, 150, NULL, service_priority,
+			&handle_led);
 }
 
 /**
- * @brief	Simple task which blinks a led
- * @param 	*pParameters	Pointer to parameters passed to the function
+ * @brief	Simple service which blinks a led
+ * @param	*args	Arguments used to receive variables
  * @return	None
  */
 

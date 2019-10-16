@@ -2,7 +2,7 @@
  * totem_sys.h
  *
  *  Created on: Oct 10, 2019
- *      Author: Miguel Villalba <mvillalba@boxfish.studio>
+ *      Author: Miguel Villalba <mvillalba@boxfish.studio>, Agustin Tena <atena@boxfish.studio>
  */
 
 #ifndef TOTEM_SYS_H_
