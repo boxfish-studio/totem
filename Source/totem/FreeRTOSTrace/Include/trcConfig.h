@@ -97,7 +97,7 @@ extern "C" {
  * TRC_RECORDER_MODE_SNAPSHOT
  * TRC_RECORDER_MODE_STREAMING
  ******************************************************************************/
-#define TRC_CFG_RECORDER_MODE TRC_RECORDER_MODE_SNAPSHOT
+#define TRC_CFG_RECORDER_MODE TRC_RECORDER_MODE_STREAMING
 
 /******************************************************************************
  * TRC_CFG_FREERTOS_VERSION
@@ -286,6 +286,9 @@ extern "C" {
  * Default value: 8
  *****************************************************************************/
 #define TRC_CFG_MAX_ISR_NESTING 8
+
+// define used to refer to the systick when is called to timestamp
+#define TRC_CFG_ARM_CM_USE_SYSTICK 1
 
 /* Specific configuration, depending on Streaming/Snapshot mode */
 #if (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_SNAPSHOT)

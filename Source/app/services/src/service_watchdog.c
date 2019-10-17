@@ -30,6 +30,8 @@ void service_watchdog(void *args) {
 
 	portTickType xFirstTime, xLastWakeTime;
 
+	traceString stackTrace = INIT_STACKTRACE(WATCHDOG_SERVICE_NAME);
+
 	RMU_ResetCauseClear();
 
 	wdg_init(INITIAL_TIMEOUT);
@@ -42,5 +44,7 @@ void service_watchdog(void *args) {
 
 		vTaskDelay(
 				(NEXT_CLEAR / portTICK_RATE_MS) - (xLastWakeTime - xFirstTime));
+
+		PRINT_STACKTRACE(stackTrace);
 	}
 }

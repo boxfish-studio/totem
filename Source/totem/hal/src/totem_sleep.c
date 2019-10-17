@@ -127,6 +127,7 @@ static void SLEEP_EnterEMx(SLEEP_EnergyMode_t eMode);
  * @param[in] pWakeUpCb
  *   Pointer to the callback function that is being called after wake up.
  ******************************************************************************/
+
 void SLEEP_Init(SLEEP_CbFuncPtr_t pSleepCb, SLEEP_CbFuncPtr_t pWakeUpCb) {
 	/* Initialize callback functions. */
 	sleepCallback = pSleepCb;

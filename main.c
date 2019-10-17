@@ -16,15 +16,11 @@ int main(void) {
 	// System initialization
 	totem_init();
 
-#if DBG_STACKTRACE
-	vTraceEnable(TRC_START);
-#endif
-
 	// LEDs service
-	service_led_setup((const char *) "blink_led", TASK_PRIORITY_MEDIUM);
+	service_led_setup(LEDS_SERVICE_NAME, TASK_PRIORITY_MEDIUM);
 
 	// Watchdog service
-	service_watchdog_setup((const char *) "watchdog", TASK_PRIORITY_HIGH);
+	service_watchdog_setup(WATCHDOG_SERVICE_NAME, TASK_PRIORITY_HIGH);
 
 	totem_start();
 
