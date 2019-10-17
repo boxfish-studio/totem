@@ -10,6 +10,8 @@
 
 #include "totem_sys.h"
 
+static const char WATCHDOG_SERVICE_NAME[] = "watchdog";
+
 #define WATCHDOG_ENABLED 1
 
 void service_watchdog_setup(const char * serviceName, UBaseType_t service_priority);

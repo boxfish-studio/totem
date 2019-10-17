@@ -41,11 +41,16 @@ void totem_init() {
 #endif
 
 	HID_Init(NULL);
+
+#if TRACE_ENABLED
+	vTraceEnable(TRC_INIT);
+#endif
 }
 
 void totem_start() {
 	// Start FreeRTOS Scheduler
 	vTaskStartScheduler();
+	PRINT("** TOTEM STARTED **\n\n");
 }
 
 /**

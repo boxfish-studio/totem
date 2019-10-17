@@ -26,7 +26,7 @@ void service_led_setup(const char * service_name, UBaseType_t service_priority) 
 void service_led(void *args) {
 	uint8_t led_on = 0;
 
-	traceString stackTrace = INIT_STACKTRACE("LED");
+	traceString stackTrace = INIT_STACKTRACE(LEDS_SERVICE_NAME);
 
 	for (;;) {
 		vTaskDelay(500 / portTICK_RATE_MS); //delay of 500ms
