@@ -23,29 +23,23 @@
 extern "C" {
 #endif
 
-typedef void (*HID_SetReportFunc_t)( uint8_t report );
+typedef void (*HID_SetReportFunc_t)(uint8_t **report);
 
-/** HID driver initialization structure.
- *  This data structure contains configuration options that the driver
- *  needs. The structure must be passed to @ref HID_Init() when initializing
- *  the driver.
- */
 typedef struct
 {
-  void                  *hidDescriptor; /**< Pointer to the HID class descriptor in the user application. */
-  HID_SetReportFunc_t  	setReportFunc;  /**< Callback function pointer for HID output reports, may be NULL when no callback is needed. */
-} HID_Init_t;
+    uint8_t data[37];        /* Received USB data */
+} usbInData_t;
 
-void HID_Init( HID_Init_t *init );
-int  HID_SetupCmd( const USB_Setup_TypeDef *setup );
-void HID_StateChangeEvent( USBD_State_TypeDef oldState,
-                              USBD_State_TypeDef newState );
+void HID_Init();
+int HID_SetupCmd(const USB_Setup_TypeDef *setup);
+void HID_StateChangeEvent(USBD_State_TypeDef oldState,
+		USBD_State_TypeDef newState);
+int HID_TransferCompleteCallback(USB_Status_TypeDef status, uint32_t xferred,
+		uint32_t remaining);
 
 #ifdef __cplusplus
 }
 #endif
 
-/** @} (end group HidKeyboard) */
-/** @} (end group Drivers) */
 
-#endif /* __SILICON_LABS_HIDKBD_H__ */
+#endif /* HID_H_ */

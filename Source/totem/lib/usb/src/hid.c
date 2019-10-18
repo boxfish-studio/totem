@@ -17,11 +17,21 @@
 #include "em_usb.h"
 #include "hid.h"
 #include "descriptors.h"
+#include "FreeRTOS.h"
+#include "queue.h"
+#include "semphr.h"
 
 /** Default idle-rate recommended in the USB HID class specification. */
 #define DEFAULT_IDLE_RATE  500
 
-static uint32_t                 tmpBuffer;
+/* RTOS Queues */
+extern xQueueHandle queue_usb_in;
+
+/* RTOS Semaphores */
+extern xSemaphoreHandle sem_ISR_USB_transfer_done;
+extern xSemaphoreHandle sem_activate_xmodem_communicator;
+
+static volatile uint8_t rcv_buf[37] __attribute__ ((aligned(4)));
 static void               		*hidDescriptor = NULL;
 static HID_SetReportFunc_t   	setReportFunc = NULL;
 
@@ -45,6 +55,7 @@ static const USBD_Init_TypeDef initStruct =
   .reserved            = 0
 };
 
+static int OutputReportReceived(USB_Status_TypeDef status, uint32_t xferred, uint32_t remaining);
 
 /**************************************************************************//**
  * @brief
@@ -57,21 +68,7 @@ static const USBD_Init_TypeDef initStruct =
  *
  * @return USB_STATUS_OK.
  *****************************************************************************/
-static int OutputReportReceived( USB_Status_TypeDef status,
-                                 uint32_t xferred,
-                                 uint32_t remaining )
-{
-  (void) remaining;
 
-  if (     ( status        == USB_STATUS_OK )
-        && ( xferred       == 1             )
-        && ( setReportFunc != NULL          ) )
-  {
-    setReportFunc( (uint8_t)tmpBuffer );
-  }
-
-  return USB_STATUS_OK;
-}
 
 /** @endcond */
 
@@ -82,11 +79,9 @@ static int OutputReportReceived( USB_Status_TypeDef status,
  * @param[in] init
  *  Pointer to a HID_Init_t struct with configuration options.
  ******************************************************************************/
-void HID_Init( HID_Init_t *init )
+void HID_Init()
 {
 	USBD_Init(&initStruct);
-	hidDescriptor = &USBDESC_HidDescriptor;
-	setReportFunc = NULL;
 }
 
 /**************************************************************************//**
@@ -127,7 +122,7 @@ int HID_SetupCmd( const USB_Setup_TypeDef *setup )
       else if ( ( setup->wValue >> 8 ) == USB_HID_DESCRIPTOR )
       {
         /* The HID descriptor might be misaligned ! */
-        memcpy( hidDesc, hidDescriptor, USB_HID_DESCSIZE );
+        memcpy( hidDesc, &USBDESC_configDesc[USB_CONFIG_DESCSIZE + USB_INTERFACE_DESCSIZE], USB_HID_DESCSIZE );
         USBD_Write( 0, hidDesc, SL_MIN(USB_HID_DESCSIZE, setup->wLength), NULL );
         retVal = USB_STATUS_OK;
       }
@@ -143,7 +138,7 @@ int HID_SetupCmd( const USB_Setup_TypeDef *setup )
     {
     case USB_HID_SET_REPORT:
       /********************/
-        USBD_Read( 0, (void*)&tmpBuffer, 1, OutputReportReceived );
+        USBD_Read( 0, &rcv_buf, 37, OutputReportReceived );
         retVal = USB_STATUS_OK;
         break;
     }
@@ -182,6 +177,37 @@ void HID_StateChangeEvent( USBD_State_TypeDef oldState,
     /* Reduce current consumption to below 2.5 mA.    */
 
   }
+}
+
+static int OutputReportReceived(USB_Status_TypeDef status, uint32_t xferred, uint32_t remaining)
+{
+    portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+    if (remaining == 0)
+    {
+        usbInData_t usbData;
+        /* Copy received data into queue packet */
+        memcpy (&usbData.data, &rcv_buf, 37);
+
+        /* Send received data to queue */
+        xQueueSendFromISR(queue_usb_in, &usbData, &xHigherPriorityTaskWoken);
+        xSemaphoreGiveFromISR(sem_activate_xmodem_communicator, &xHigherPriorityTaskWoken);
+    }
+
+    portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
+    return USB_STATUS_OK;
+}
+
+int HID_TransferCompleteCallback(USB_Status_TypeDef status, uint32_t xferred, uint32_t remaining)
+{
+    portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+
+    if (remaining == 0)
+    {
+        xSemaphoreGiveFromISR(sem_ISR_USB_transfer_done, &xHigherPriorityTaskWoken);
+    }
+
+    portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
+    return USB_STATUS_OK;
 }
 
 /** @endcond */

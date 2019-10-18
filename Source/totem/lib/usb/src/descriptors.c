@@ -49,7 +49,7 @@ const USB_DeviceDescriptor_TypeDef USBDESC_deviceDesc SL_ATTRIBUTE_ALIGN(4)=
   .bDeviceProtocol    = 0,
   .bMaxPacketSize0    = USB_FS_CTRL_EP_MAXSIZE,
   .idVendor           = 0x10C4,
-  .idProduct          = 0x1001,
+  .idProduct          = 0x1002,
   .bcdDevice          = 0x0000,
   .iManufacturer      = 1,
   .iProduct           = 2,
@@ -114,8 +114,8 @@ const uint8_t USBDESC_configDesc[] SL_ATTRIBUTE_ALIGN(4)=
   1,       					/* bInterval             */
 };
 
-const void *USBDESC_HidDescriptor = (void*)
-  &USBDESC_configDesc[ USB_CONFIG_DESCSIZE + USB_INTERFACE_DESCSIZE ];
+//const void *USBDESC_HidDescriptor = (void*)
+//  &USBDESC_configDesc[ USB_CONFIG_DESCSIZE + USB_INTERFACE_DESCSIZE ];
 
 STATIC_CONST_STRING_DESC_LANGID( langID, 0x04, 0x09 );
 
