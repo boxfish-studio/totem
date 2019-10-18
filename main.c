@@ -14,9 +14,6 @@
 #include "service_xmodem_dispatcher.h"
 #include "service_communications.h"
 
-#include "xmodem.h"
-#include "hid.h"
-
 // Semaphores
 xSemaphoreHandle sem_ISR_USB_transfer_done;
 xSemaphoreHandle sem_activate_xmodem_communicator;
@@ -48,7 +45,7 @@ int main(void) {
 	service_led_setup(LEDS_SERVICE_NAME, TASK_PRIORITY_MEDIUM);
 
 	// Communications service
-	service_xmodem_communicator_setup(XMODEM_SERVICE_NAME, TASK_PRIORITY_HIGH);
+	service_communications_setup(COMMUNICATIONS_SERVICE_NAME, TASK_PRIORITY_HIGH);
 	service_xmodem_dispatcher_setup(DISPATCHER_SERVICE_NAME, TASK_PRIORITY_LOW);
 
 	// Watchdog service

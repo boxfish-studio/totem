@@ -1,7 +1,6 @@
 #include "service_communications.h"
 
 #include "hid.h"
-#include "xmodem.h"
 
 /*********************** Local typedefs *****************************************************/
 typedef enum
@@ -22,21 +21,6 @@ typedef struct
     uint8_t crcLow;
 } xModem_packet_t;
 
-/* XMODEM protocol states used */
-#define XMODEM_SOT     0x21        /* Start of Transmission */
-#define XMODEM_ACKSOT  0x22        /* ACK Start of Transmission */
-#define XMODEM_NAKSOT  0x23        /* NAK Start of Transmission */
-
-#define XMODEM_NCG     0x43        /* Initial Character */
-#define XMODEM_SOH     0x01        /* Start Of Header (signals regular data package) */
-#define XMODEM_EOT     0x04        /* End Of Transmission */
-#define XMODEM_ACKEOT  0x25        /* End Of Transmission */
-#define XMODEM_NAKEOT  0x26        /* End Of Transmission */
-
-#define XMODEM_ACK     0x06        /* ACKnowlege */
-#define XMODEM_NAK     0x15        /* Negative AcKnowlege */
-#define XMODEM_CAN     0x18        /* CANcel */
-
 #define XMODEM_TIMEOUT 25          /* Amount of retries until break */
 
 /*********************** Variable definitions **********************************************/
@@ -54,6 +38,8 @@ static bool xmodem_send(xModemCommunicator_t send_data, bool first_send_run, boo
 static bool usb_send (uint8_t data[], int len);
 static int xmodem_verifyPacketChecksum(xModem_packet_t *pkt, uint32_t sequenceNumber);
 static uint16_t crc_calc(uint8_t *start, uint8_t *end);
+static void receiveCallback(uint8_t **report, uint8_t remaining);
+static int transmitCallback(USB_Status_TypeDef status, uint32_t xferred, uint32_t remaining);
 
 /****** Initializations **********/
 xModemCommunicatorMode_t    current_task_mode = IDLE;
@@ -65,14 +51,14 @@ static xTaskHandle handle_xmodem;
 /**
  *
  */
-void service_xmodem_communicator_setup(const char * service_name, UBaseType_t service_priority) {
-	xTaskCreate(service_xmodem_communicator, service_name, 650, NULL, service_priority,
+void service_communications_setup(const char * service_name, UBaseType_t service_priority) {
+	xTaskCreate(service_communications, service_name, 650, NULL, service_priority,
 			&handle_xmodem);
 }
 
-void service_xmodem_communicator(void *args)
+void service_communications(void *args)
 {
-    INIT_STACKTRACE("task_xmodem_communicator");
+	traceString stack_trace = INIT_STACKTRACE(COMMUNICATIONS_SERVICE_NAME);
 
     /********************** Local task variables ****************************/
     xModemCommunicator_t in_data;
@@ -87,7 +73,7 @@ void service_xmodem_communicator(void *args)
     int timeout_counter = 0;
 
     /* Enable USB peripheral */
-    HID_Init(NULL);
+    HID_Init(receiveCallback);
 
     /* Task main loop */
     while (1)
@@ -326,7 +312,7 @@ void service_xmodem_communicator(void *args)
             } //END switch
         }
 
-        PRINT_STACKTRACE("task_xmodem_communicator");
+        PRINT_STACKTRACE(stack_trace);
     }
 }
 
@@ -506,7 +492,7 @@ static bool usb_send (uint8_t data[], int len)
         }
 
         vTaskSuspendAll();
-        USBD_Write(0x81, (void*) data, XMODEM_PACKET_SIZE, HID_TransferCompleteCallback);
+        USBD_Write(0x81, (void*) data, XMODEM_PACKET_SIZE, transmitCallback);
         xTaskResumeAll();
         // Wait for completion of transmission
         if (xSemaphoreTake(sem_ISR_USB_transfer_done, 100 / portTICK_RATE_MS) != pdPASS)
@@ -575,4 +561,33 @@ static uint16_t crc_calc(uint8_t *start, uint8_t *end)
     }
 
     return crc;
+}
+
+static void receiveCallback(uint8_t **report, uint8_t remaining)
+{
+    portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+    if (!remaining) {
+		usbInData_t usbData;
+		/* Copy received data into queue packet */
+		memcpy (&usbData.data, report, XMODEM_PACKET_SIZE);
+
+		/* Send received data to queue */
+		xQueueSendFromISR(queue_usb_in, &usbData, &xHigherPriorityTaskWoken);
+		xSemaphoreGiveFromISR(sem_activate_xmodem_communicator, &xHigherPriorityTaskWoken);
+    }
+
+    portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
+}
+
+static int transmitCallback(USB_Status_TypeDef status, uint32_t xferred, uint32_t remaining)
+{
+    portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+
+    if (remaining == 0)
+    {
+        xSemaphoreGiveFromISR(sem_ISR_USB_transfer_done, &xHigherPriorityTaskWoken);
+    }
+
+    portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
+    return USB_STATUS_OK;
 }

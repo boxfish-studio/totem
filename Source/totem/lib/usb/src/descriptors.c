@@ -17,22 +17,25 @@
 // From Book "USB Complete"
 SL_ALIGN(4)
 const char ReportDescriptor[34] __attribute__ ((aligned(4)))= {
-        0x06,  0xFF, 0xA0,          //Usage Page Vendor defined
+        0x06,  0xFF,
+		0xA0,          				//Usage Page Vendor defined
         0x09,  0x01,                //Usage (vendor-defined)
         0xA1,  0x01,                //Collection (Application)
 
         0x09,  0x03,                //Usage (vendor-defined)
         0x15,  0x00,                //Logical Minimum (0)
-        0x26, 0x00, 0xFF,           //Logical Maximum (255)
+        0x26,  0x00,
+		0xFF,           			//Logical Maximum (255)
         0x75,  0x08,                //Report Size (8 bits)
-        0x95,  37,  				//Report Count (size of XMODEM Packet)
+        0x95,  XMODEM_PACKET_SIZE,  //Report Count (size of XMODEM Packet)
         0x81,  0x02,                //Input (Data, Variable, Absolute)
 
         0x09,  0x04,                //Usage (vendor-defined)
         0x15,  0x00,                //Logical Minimum (0)
-        0x26,  0x00, 0xFF,          //Logical Maximum (255)
+        0x26,  0x00,
+		0xFF,          				//Logical Maximum (255)
         0x75,  0x08,                //Report Size (8 bits)
-        0x95,  37,  				//Report Count (size of XMODEM Packet)
+        0x95,  XMODEM_PACKET_SIZE,  //Report Count (size of XMODEM Packet)
         0x91,  0x02,                //Output (Data, Variable, Absolute)
 
         0xC0                        // END_COLLECTION

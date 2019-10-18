@@ -15,27 +15,20 @@
 #ifndef HID_H_
 #define HID_H_
 
-#include <stdint.h>
-
 #include "em_usb.h"
+
+#include "xmodem.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef void (*HID_SetReportFunc_t)(uint8_t **report);
+typedef void (*HID_SetReportFunc_t)(uint8_t **report, uint8_t remaining);
 
-typedef struct
-{
-    uint8_t data[37];        /* Received USB data */
-} usbInData_t;
-
-void HID_Init();
+void HID_Init(HID_SetReportFunc_t callbackFunction);
 int HID_SetupCmd(const USB_Setup_TypeDef *setup);
 void HID_StateChangeEvent(USBD_State_TypeDef oldState,
 		USBD_State_TypeDef newState);
-int HID_TransferCompleteCallback(USB_Status_TypeDef status, uint32_t xferred,
-		uint32_t remaining);
 
 #ifdef __cplusplus
 }
