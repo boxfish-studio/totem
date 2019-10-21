@@ -8,21 +8,22 @@
 #ifndef TOTEM_COMMON_H_
 #define TOTEM_COMMON_H_
 
+#include "em_chip.h"
+#include "em_cmu.h"
+#include "em_gpio.h"
+#include "em_rmu.h"
+
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
 #include "task.h"
 #include "queue.h"
 #include "semphr.h"
 
+#include "hid.h"
 #include "pinmap.h"
 #include "_stdio.h"
 #include "trace.h"
 #include "xmodem.h"
-
-#include "em_chip.h"
-#include "em_cmu.h"
-#include "em_gpio.h"
-#include "em_rmu.h"
 
 #endif /* TOTEM_COMMON_H_ */
 
