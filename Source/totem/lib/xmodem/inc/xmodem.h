@@ -1,16 +1,15 @@
 /*
- * xmodem.h
+ * 	xmodem.h
  *
- *  Created on: Jul 20, 2016
- *      Author: Agustin Tena
- *      Mail:   tena@fazua.com
+ *  Created on: Oct 18, 2019
+ *      Author: Agustin Tena <atena@boxfish.studio>
  */
 
 #ifndef XMODEM_H_
 #define XMODEM_H_
 
-#include <stdbool.h>
-#include <stdint.h>
+#include "totem_mcu_common.h"
+#include "totem_freertos_common.h"
 
 // XMODEM CONFIG
 #define XMODEM_DATA_SIZE            32                      // Bytes of data in XMODEM message
@@ -33,27 +32,22 @@
 #define XMODEM_CAN     0x18        /* CANcel */
 
 // Message types
-typedef enum
-{
-    XMODEM_MASTER_MSG = 1,
-	XMODEM_SLAVE_MSG = 2
-} xModemMessageTypes_t;
+typedef enum {
+	XMODEM_MASTER_MSG = 1, XMODEM_SLAVE_MSG = 2
+} xmodem_message_sender_t;
 
-typedef enum
-{
-    USB_RCV         = 1,
-    XMODEM_SEND     = 2,
-    XMODEM_RCV      = 3
-} xModemCommunicatorTypes_t;
+typedef enum {
+	USB_RCV = 1, XMODEM_SEND = 2, XMODEM_RCV = 3
+} xmodem_message_type_t;
 
-typedef struct
-{
-    xModemCommunicatorTypes_t type;         // Tells the receiving task what the event is.
-    int dat_len;                            // The amounts of data bytes
-    uint8_t data[XMODEM_MAX_DATA_SIZE];     // Holds or points to any data associated with the event.
-} xModemCommunicator_t;
+typedef struct {
+	xmodem_message_type_t type;   // Tells the receiving task what the event is.
+	int dat_len;                            // The amounts of data bytes
+	uint8_t data[XMODEM_MAX_DATA_SIZE]; // Holds or points to any data associated with the event.
+} xmodem_message_t;
 
 // Function to send data via USB (XMODEM) to PC
-bool xmodem_send_data(xModemMessageTypes_t msg_type, uint8_t subcommand, uint8_t data[], int len);
+bool xmodem_send_data(xmodem_message_sender_t msg_type, uint8_t subcommand,
+		uint8_t data[], int len);
 
 #endif // XMODEM_H_

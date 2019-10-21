@@ -19,16 +19,16 @@ typedef struct {
 
 /*********************** Variable definitions **********************************************/
 /* Semaphores */
-extern xSemaphoreHandle sem_ISR_USB_transfer_done;
-extern xSemaphoreHandle sem_activate_xmodem_communicator;
+extern xSemaphoreHandle sem_usb_transfer_done;
+extern xSemaphoreHandle sem_xmodem_data_ready;
 /* Queues */
-extern xQueueHandle queue_xmodem_communicator_in;
-extern xQueueHandle queue_xmodem_communicator_out;
-extern xQueueHandle queue_usb_in;
+extern xQueueHandle q_xmodem_stack_in;
+extern xQueueHandle q_xmodem_stack_out;
+extern xQueueHandle q_usb_in;
 
 /*********************** Local function prototypes ******************************************/
-static bool xmodem_read(usbInData_t data, bool first_rcv_run);
-static bool xmodem_send(xModemCommunicator_t send_data, bool first_send_run,
+static bool xmodem_read(usb_data_packet_t data, bool first_rcv_run);
+static bool xmodem_send(xmodem_message_t send_data, bool first_send_run,
 		bool ack_last_package);
 static bool usb_send(uint8_t data[], int len);
 static int xmodem_verifyPacketChecksum(xModem_packet_t *pkt,
@@ -40,8 +40,8 @@ static int transmitCallback(USB_Status_TypeDef status, uint32_t xferred,
 
 /****** Initializations **********/
 xModemCommunicatorMode_t current_task_mode = IDLE;
-xModemCommunicator_t rcv_dispatch_data;
-xModemCommunicator_t send_data;
+xmodem_message_t rcv_dispatch_data;
+xmodem_message_t send_data;
 
 static xTaskHandle handle_xmodem;
 
@@ -58,10 +58,10 @@ void service_usb_xmodem(void *args) {
 	traceString stack_trace = INIT_STACKTRACE(COMMUNICATIONS_SERVICE_NAME);
 
 	/********************** Local task variables ****************************/
-	xModemCommunicator_t in_data;
-	xModemCommunicator_t peek_in_data;
-	usbInData_t usb_in_data;
-	usbInData_t peek_usb_in_data;
+	xmodem_message_t in_data;
+	xmodem_message_t peek_in_data;
+	usb_data_packet_t usb_in_data;
+	usb_data_packet_t peek_usb_in_data;
 
 	/* Status variables */
 	bool first_rcv_run = false;
@@ -78,22 +78,22 @@ void service_usb_xmodem(void *args) {
 		/**************************** Queue Handling *******************************/
 		if (current_task_mode == IDLE) {
 			// Wait for semaphore to activate Task
-			xSemaphoreTake(sem_activate_xmodem_communicator, portMAX_DELAY);
+			xSemaphoreTake(sem_xmodem_data_ready, portMAX_DELAY);
 
 			/* Check which queue has data in order to select the right mode */
-			if (xQueuePeek(queue_xmodem_communicator_in, &peek_in_data,
+			if (xQueuePeek(q_xmodem_stack_in, &peek_in_data,
 					50 / portTICK_RATE_MS) == pdPASS) {
 				current_task_mode = SENDING;
-				xQueueReceive(queue_xmodem_communicator_in, &in_data, 0);
-			} else if (xQueuePeek(queue_usb_in, &peek_usb_in_data,
+				xQueueReceive(q_xmodem_stack_in, &in_data, 0);
+			} else if (xQueuePeek(q_usb_in, &peek_usb_in_data,
 					50 / portTICK_RATE_MS) == pdPASS) {
 				current_task_mode = RECEIVING;
-				xQueueReceive(queue_usb_in, &usb_in_data, 0);
+				xQueueReceive(q_usb_in, &usb_in_data, 0);
 			} else
 				continue;
 		} else {
 
-			if (xQueueReceive(queue_usb_in, &usb_in_data,
+			if (xQueueReceive(q_usb_in, &usb_in_data,
 					50 / portTICK_RATE_MS) == errQUEUE_EMPTY) {
 				PRINT("task_xmodem_communicator(): Expected data in receive queue (queue_usb_in), but queue is empty!\n");
 				timeout_counter++;
@@ -118,9 +118,9 @@ void service_usb_xmodem(void *args) {
 			send_state = 0;
 
 			//Clean up queues
-			xQueueReset(queue_usb_in);
-			xQueueReset(queue_xmodem_communicator_in);
-			xQueueReset(queue_xmodem_communicator_out);
+			xQueueReset(q_usb_in);
+			xQueueReset(q_xmodem_stack_in);
+			xQueueReset(q_xmodem_stack_out);
 		}
 
 		/* ********************************************** STATE MACHINE ******************************************** */
@@ -139,7 +139,7 @@ void service_usb_xmodem(void *args) {
 				usb_send(data, 1);
 
 				// Send received data to the dispatcher; clear buffer
-				xQueueSendToBack(queue_xmodem_communicator_out,
+				xQueueSendToBack(q_xmodem_stack_out,
 						&rcv_dispatch_data, 0);
 				first_rcv_run = false;
 				timeout_counter = 0;
@@ -283,7 +283,7 @@ void service_usb_xmodem(void *args) {
 
 /*********************** Local helper functions **********************************************/
 /* Returns true when everything (whole data) is sent */
-static bool xmodem_send(xModemCommunicator_t send_data, bool first_send_run,
+static bool xmodem_send(xmodem_message_t send_data, bool first_send_run,
 		bool ack_last_package) {
 	/* Define local variables */
 	static int bytes_sent;
@@ -344,7 +344,7 @@ static bool xmodem_send(xModemCommunicator_t send_data, bool first_send_run,
 	return false;
 }
 
-static bool xmodem_read(usbInData_t data, bool first_rcv_run) {
+static bool xmodem_read(usb_data_packet_t data, bool first_rcv_run) {
 	static uint32_t sequenceNumber;
 	static int rcv_dispatch_data_position;
 	xModem_packet_t pkt;
@@ -439,7 +439,7 @@ static bool usb_send(uint8_t data[], int len) {
 		USBD_Write(0x81, (void*) data, XMODEM_PACKET_SIZE, transmitCallback);
 		xTaskResumeAll();
 		// Wait for completion of transmission
-		if (xSemaphoreTake(sem_ISR_USB_transfer_done,
+		if (xSemaphoreTake(sem_usb_transfer_done,
 				100 / portTICK_RATE_MS) != pdPASS) {
 			PRINT ("usb_send(): ERROR!: Sending data failed!\n");
 			return false;
@@ -503,13 +503,13 @@ static uint16_t crc_calc(uint8_t *start, uint8_t *end) {
 static void receiveCallback(uint8_t **report, uint8_t remaining) {
 	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 	if (!remaining) {
-		usbInData_t usbData;
+		usb_data_packet_t usbData;
 		/* Copy received data into queue packet */
 		memcpy(&usbData.data, report, XMODEM_PACKET_SIZE);
 
 		/* Send received data to queue */
-		xQueueSendFromISR(queue_usb_in, &usbData, &xHigherPriorityTaskWoken);
-		xSemaphoreGiveFromISR(sem_activate_xmodem_communicator,
+		xQueueSendFromISR(q_usb_in, &usbData, &xHigherPriorityTaskWoken);
+		xSemaphoreGiveFromISR(sem_xmodem_data_ready,
 				&xHigherPriorityTaskWoken);
 	}
 
@@ -521,7 +521,7 @@ static int transmitCallback(USB_Status_TypeDef status, uint32_t xferred,
 	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 
 	if (remaining == 0) {
-		xSemaphoreGiveFromISR(sem_ISR_USB_transfer_done,
+		xSemaphoreGiveFromISR(sem_usb_transfer_done,
 				&xHigherPriorityTaskWoken);
 	}
 

@@ -12,7 +12,7 @@
 
 typedef struct {
 	uint8_t data[XMODEM_PACKET_SIZE]; /* Received USB data */
-} usbInData_t;
+} usb_data_packet_t;
 
 static const char USB_XMODEM_SERVICE_NAME[] = "usb_xmodem";
 

@@ -8,7 +8,7 @@
 #include <service_usb_data_handler.h>
 
 // RTOS Queues
-extern xQueueHandle queue_xmodem_communicator_out;
+extern xQueueHandle q_xmodem_stack_out;
 
 static xTaskHandle service_handler;
 
@@ -27,12 +27,12 @@ void service_usb_data_handler_setup(const char * service_name,
 void service_usb_data_handler(void *args) {
 	traceString stack_trace = INIT_STACKTRACE(USB_DATA_HANDLER_SERVICE_NAME);
 
-	xModemCommunicator_t in_data;
+	xmodem_message_t in_data;
 	uint8_t rx_counter = 0;
 
 	while (1) {
 		// Wait for data to come in from xmodem_communicator
-		xQueueReceive(queue_xmodem_communicator_out, &in_data, portMAX_DELAY);
+		xQueueReceive(q_xmodem_stack_out, &in_data, portMAX_DELAY);
 		PRINT("-------------------- Task task_xmodem_dispatcher running -----------------------------\n");
 
 		// Check whether data is meant for this task
