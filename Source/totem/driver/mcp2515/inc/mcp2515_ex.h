@@ -1,0 +1,122 @@
+/*
+ * mcp2515_ex.h
+ *
+ *  Created on: Oct 21, 2019
+ *      Author: Miguel Villalba <mvillalba@boxfish.studio>
+ */
+
+#ifndef MCP2515_EX_H_
+#define MCP2515_EX_H_
+
+/* SPI instruction set */
+#define MCP2515_SPI_RESET			0xC0
+#define MCP2515_SPI_READ         	0x03
+#define MCP2515_SPI_READ_RX_BUFFER	0x90
+#define MCP2515_SPI_WRITE        	0x02
+#define MCP2515_SPI_LOAD_TX_BUFFER	0x40
+#define MCP2515_SPI_RTS				0x80
+#define MCP2515_SPI_READ_STATUS		0xA0
+#define MCP2515_SPI_RX_STATUS		0xB0
+#define MCP2515_SPI_BIT_MODIFY		0x05
+
+/* Register directions */
+#define MCP2515_RXF0				0x00
+#define MCP2515_RXF1				0x04
+#define MCP2515_RXF2				0x08
+#define MCP2515_BFPCTRL				0x0C
+#define MCP2515_TXRTSCTRL			0x0D
+#define MCP2515_CANSTAT				0x0E
+#define MCP2515_CANCTRL				0x0F
+#define MCP2515_RXF3				0x10
+#define MCP2515_RXF4				0x14
+#define MCP2515_RXF5				0x18
+#define MCP2515_TEC					0x1C
+#define MCP2515_REC					0x1D
+#define MCP2515_RXM0				0x20
+#define MCP2515_RXM1				0x24
+#define MCP2515_CNF3				0x28
+#define MCP2515_CNF2				0x29
+#define MCP2515_CNF1				0x2A
+#define MCP2515_CANINTE				0x2B
+#define MCP2515_CANINTF				0x2C
+#define MCP2515_EFLG				0x2D
+#define MCP2515_TXB0CTRL			0x30
+#define MCP2515_TXB1CTRL			0x40
+#define MCP2515_TXB2CTRL			0x50
+#define MCP2515_RXB0CTRL			0x60
+#define MCP2515_RXB1CTRL			0x70
+
+/* MCP2515 control register */
+#define MCP2515_CTRL_REQOP			0x20
+#define MCP2515_CTRL_ABAT			0x10
+#define MCP2515_CTRL_OSM			0x08
+#define MCP2515_CTRL_CLKEN			0x04
+#define MCP2515_CTRL_CLKPRE			0x01
+
+#define MCP2515_CTRL_REQOP_NORMAL	(0b000 << 5)
+#define MCP2515_CTRL_REQOP_SLEEP	(0b001 << 5)
+#define MCP2515_CTRL_REQOP_LOOP		(0b010 << 5)
+#define MCP2515_CTRL_REQOP_LISTEN	(0b011 << 5)
+#define MCP2515_CTRL_REQOP_CONFIG	(0b100 << 5)
+
+#define MCP2515_CTRL_CLKOUTPRE_1	(0b00)
+#define MCP2515_CTRL_CLKOUTPRE_2	(0b01)
+#define MCP2515_CTRL_CLKOUTPRE_4	(0b10)
+#define MCP2515_CTRL_CLKOUTPRE_8	(0b11)
+
+/* Configuration register definitions */
+#define MCP2515_CNF_SJW				0x40
+#define MCP2515_CNF_BRP				0x01
+#define MCP2515_CNF_BTL				0x80
+#define MCP2515_CNF_SAM				0x40
+#define MCP2515_CNF_PHSEG			0x04
+#define MCP2515_CNF_PRSEG			0x01
+#define MCP2515_CNF_SOF				0x80
+#define MCP2515_CNF_WAKFIL			0x40
+#define MCP2515_CNF_PHSEG2			0x01
+
+/* RXBnCTRL bit definitions */
+#define MCP2515_RXCTRL_BUF			0x20
+#define MCP2515_RXCTRL_RTR			0x08
+#define MCP2515_RX0CTRL_BUKT		0x04
+#define MCP2515_RX0CTRL_BUKT1		0x02
+#define MCP2515_RXCTRL_FILHIT		0x01
+
+#define MCP2515_RXCTRL_BUF_FILTERS_OFF	(0b11 << 5)
+#define MCP2515_RXCTRL_BUF_FILTERS_ON	(0b00 << 5)
+
+/* TXBnCTRL bit definitions */
+#define MCP2515_TXCTRL_ABTF			0x40
+#define MCP2515_TXCTRL_MLOA			0x20
+#define MCP2515_TXCTRL_TXERR		0x10
+#define MCP2515_TXCTRL_RTS			0x08
+#define MCP2515_TXCTRL_TXP			0x01
+
+#define MCP2515_TXCTRL_TXP_HIGH		(0b11)
+#define MCP2515_TXCTRL_TXP_MEDIUM	(0b10)
+#define MCP2515_TXCTRL_TXP_LOW		(0b01)
+#define MCP2515_TXCTRL_TXP_LOWEST	(0b00)
+
+/* Data register */
+#define MCP2515_DATA_SIDH			0x01
+#define MCP2515_DATA_SIDL			0x02
+#define MCP2515_DATA_EID8			0x03
+#define MCP2515_DATA_EID0			0x04
+#define MCP2515_DATA_DLC			0x05
+#define MCP2515_DATA_D0				0x06
+#define MCP2515_DATA_D1				0x07
+#define MCP2515_DATA_D2				0x08
+#define MCP2515_DATA_D3				0x09
+#define MCP2515_DATA_D4				0x0A
+#define MCP2515_DATA_D5				0x0B
+#define MCP2515_DATA_D6				0x0C
+#define MCP2515_DATA_D7				0x0D
+
+/* Filter & Mask register */
+#define MCP2515_FILTMASK_SIDH		0x00
+#define MCP2515_FILTMASK_SIDL		0x01
+#define MCP2515_FILTMASK_EID8		0x02
+#define MCP2515_FILTMASK_EID0		0x03
+
+
+#endif /* MCP2515_EX_H_ */
