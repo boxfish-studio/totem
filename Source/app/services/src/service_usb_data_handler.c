@@ -60,49 +60,38 @@ void service_usb_data_handler(void *args) {
 	}
 }
 
+bool xmodem_dispatch_master_msg(uint8_t data[], uint8_t len) {
 
+	if (len < 2) {
+		PRINT("xmodem_dispatch_master_msg(): ERROR, not enough bytes received!\n");
+		return false;
+	}
 
-bool xmodem_dispatch_master_msg(uint8_t data[], uint8_t len)
-{
-    test	rcv_master;
+	switch (data[1]) {
+	case XMODEM_HOST_SUBMSG_STATUS:
+		// Set Master status msg
+		PRINT("xmodem_dispatch_production(): Received \"Host status msg\"\n");
 
-    if (len < 2)
-    {
-        PRINT("xmodem_dispatch_master_msg(): ERROR, not enough bytes received!\n");
-        return false;
-    }
+		// Handle host data
+		break;
 
-    switch (data[1])
-    {
-        case XMODEM_MASTER_SUBMSG_STATUS:
-            // Set Master status msg
-            PRINT("xmodem_dispatch_production(): Received \"Master status msg\"\n");
+	default:
+		break;
+	}
 
-            rcv_master.pcb_type 	= data[2];
-            //rcv_master.pcb_number 	= data[3];
-            rcv_master.command 		= data[4];
-
-            break;
-
-        default:
-            break;
-    }
-
-    return true;
+	return true;
 }
 
-bool xmodem_send_slave_status_msg()
-{
+bool xmodem_send_slave_status_msg() {
 	uint8_t send_data[XMODEM_SLAVE_MSG_STATUS_DATA_SIZE];
 
-	send_data[0] = Idle;
-	send_data[1] = Remote;
-	send_data[3] = NoCommand;
-	send_data[4] = NONE;
+	send_data[0] = 0;
+	send_data[1] = 0;
+	send_data[3] = 0;
+	send_data[4] = 0;
 
-	return xmodem_send_data(XMODEM_SLAVE_MSG,
-							XMODEM_SLAVE_SUBMSG_STATUS,
-							send_data,
-							XMODEM_SLAVE_MSG_STATUS_DATA_SIZE);
+	return xmodem_send_data(XMODEM_SLAVE_MSG, XMODEM_SLAVE_SUBMSG_STATUS,
+			send_data,
+			XMODEM_SLAVE_MSG_STATUS_DATA_SIZE);
 }
 
