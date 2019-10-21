@@ -9,7 +9,8 @@
 #ifndef XMODEM_H_
 #define XMODEM_H_
 
-#include "xmodem_dispatcher.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 // XMODEM CONFIG
 #define XMODEM_DATA_SIZE            32                      // Bytes of data in XMODEM message
@@ -30,6 +31,13 @@
 #define XMODEM_ACK     0x06        /* ACKnowlege */
 #define XMODEM_NAK     0x15        /* Negative AcKnowlege */
 #define XMODEM_CAN     0x18        /* CANcel */
+
+// Message types
+typedef enum
+{
+    XMODEM_MASTER_MSG = 1,
+	XMODEM_SLAVE_MSG = 2
+} xModemMessageTypes_t;
 
 typedef enum
 {

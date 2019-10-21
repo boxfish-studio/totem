@@ -12,6 +12,9 @@ extern xQueueHandle queue_xmodem_communicator_out;
 
 static xTaskHandle service_handler;
 
+bool xmodem_dispatch_master_msg(uint8_t data[], uint8_t len);
+bool xmodem_send_slave_status_msg();
+
 /**
  *
  */
@@ -56,3 +59,50 @@ void service_usb_data_handler(void *args) {
 		PRINT_STACKTRACE(stack_trace);
 	}
 }
+
+
+
+bool xmodem_dispatch_master_msg(uint8_t data[], uint8_t len)
+{
+    test	rcv_master;
+
+    if (len < 2)
+    {
+        PRINT("xmodem_dispatch_master_msg(): ERROR, not enough bytes received!\n");
+        return false;
+    }
+
+    switch (data[1])
+    {
+        case XMODEM_MASTER_SUBMSG_STATUS:
+            // Set Master status msg
+            PRINT("xmodem_dispatch_production(): Received \"Master status msg\"\n");
+
+            rcv_master.pcb_type 	= data[2];
+            //rcv_master.pcb_number 	= data[3];
+            rcv_master.command 		= data[4];
+
+            break;
+
+        default:
+            break;
+    }
+
+    return true;
+}
+
+bool xmodem_send_slave_status_msg()
+{
+	uint8_t send_data[XMODEM_SLAVE_MSG_STATUS_DATA_SIZE];
+
+	send_data[0] = Idle;
+	send_data[1] = Remote;
+	send_data[3] = NoCommand;
+	send_data[4] = NONE;
+
+	return xmodem_send_data(XMODEM_SLAVE_MSG,
+							XMODEM_SLAVE_SUBMSG_STATUS,
+							send_data,
+							XMODEM_SLAVE_MSG_STATUS_DATA_SIZE);
+}
+
