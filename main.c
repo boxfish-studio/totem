@@ -9,10 +9,10 @@
 #include <totem_sys.h>
 
 // Services
-#include <service_led.h>
 #include <service_watchdog.h>
+#include <service_led.h>
 #include <service_usb_xmodem.h>
-#include <service_xmodem_dispatcher.h>
+#include <service_usb_data_handler.h>
 
 // Semaphores
 xSemaphoreHandle sem_ISR_USB_transfer_done;
@@ -46,7 +46,7 @@ int main(void) {
 
 	// Communications service
 	service_usb_xmodem_setup(USB_XMODEM_SERVICE_NAME, TASK_PRIORITY_HIGH);
-	service_xmodem_dispatcher_setup(DISPATCHER_SERVICE_NAME, TASK_PRIORITY_LOW);
+	service_usb_data_handler_setup(USB_DATA_HANDLER_SERVICE_NAME, TASK_PRIORITY_LOW);
 
 	// Watchdog service
 	service_watchdog_setup(WATCHDOG_SERVICE_NAME, TASK_PRIORITY_HIGH);

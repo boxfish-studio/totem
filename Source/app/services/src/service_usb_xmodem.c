@@ -100,7 +100,7 @@ void service_usb_xmodem(void *args) {
 
 				if (timeout_counter > XMODEM_TIMEOUT) {
 					/* Reset task */
-					PRINT ("task_xmodem_communicator(): Timout occured in Queue handler (receiving) - reset state of task! \n");
+					PRINT ("task_xmodem_communicator(): Timeout happened in Queue handler (receiving) - reset state of task! \n");
 					current_task_mode = IDLE;
 					timeout_counter = 0;
 					send_state = 0;

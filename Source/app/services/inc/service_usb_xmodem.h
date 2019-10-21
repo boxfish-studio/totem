@@ -1,8 +1,8 @@
 /*
- * @file service_usb_xmodem.h
+ * 	service_usb_xmodem.h
  *
- *      Created on: Oct 21, 2019
- *      	Author: Miguel Villalba <mvillalba@boxfish.studio>, Agustin Tena <atena@boxfish.studio>
+ * 	Created on: Oct 21, 2019
+ * 		Author: Miguel Villalba <mvillalba@boxfish.studio>, Agustin Tena <atena@boxfish.studio>
  */
 
 #ifndef SERVICE_USB_XMODEM_H_
