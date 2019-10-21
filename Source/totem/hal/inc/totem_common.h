@@ -11,6 +11,7 @@
 #include <totem_mcu_common.h>
 #include <totem_freertos_common.h>
 
+#include <descriptors.h>
 #include "hid.h"
 #include "pinmap.h"
 #include "_stdio.h"

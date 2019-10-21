@@ -12,8 +12,8 @@
 #include "totem_freertos_common.h"
 
 // XMODEM CONFIG
-#define XMODEM_DATA_SIZE            32                      // Bytes of data in XMODEM message
-#define XMODEM_PACKET_SIZE          XMODEM_DATA_SIZE + 5    // Total Bytes of XMODEM message (inc. header + CRC)
+#define XMODEM_PACKET_SIZE          USB_PACKET_SIZE    		// Total Bytes of XMODEM message (inc. header + CRC)
+#define XMODEM_DATA_SIZE            XMODEM_PACKET_SIZE - 5  // Bytes of data in XMODEM message
 #define XMODEM_MAX_DATA_SIZE        512                     // Maximum size of one transmission
 
 /* XMODEM protocol states used */

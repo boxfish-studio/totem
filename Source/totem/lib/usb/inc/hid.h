@@ -17,8 +17,6 @@
 
 #include "em_usb.h"
 
-#include "xmodem.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
