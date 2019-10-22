@@ -11,6 +11,8 @@
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
 #include "task.h"
+#include "semphr.h"
+#include "queue.h"
 
 #include "pinmap.h"
 #include "_stdio.h"

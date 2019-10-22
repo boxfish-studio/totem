@@ -10,6 +10,8 @@
 
 #include "mcp2515_ex.h"
 
+#include <stdint.h>
+
 #define MAX_TIMEOUT_CNT             3
 
 enum eDirection {
@@ -17,7 +19,7 @@ enum eDirection {
     CAN_QUEUE_IN  ///<- Data from BUS to software
 };
 
-typedef struct _mcp25x_if MCP2515_IF_T;
+typedef struct MCP2515_T MCP2515_T;
 
 typedef struct {
     uint8_t sidh; // TXBnSIDH
@@ -45,7 +47,7 @@ typedef struct {
     CAN_Frame_t canframe;
 } CAN_Queue_t;
 
-enum eCANaddressing {
+enum eCANAddressing {
     INVALID_ADDRESSING,
     STANDARD_ADDRESSING,
     EXTENDED_ADDRESSING,
@@ -72,7 +74,7 @@ enum eCANBaudrate {
  * @param 	baud    Baudrate for the CAN transmission
  * @return	Device descriptor
  */
-MCP25X_IF_T *mcp2515_init(enum eCANBaudrate baud);
+MCP2515_T *mcp2515_init(enum eCANBaudrate baud);
 
 /**
  * @brief 	Reset MCP device. After the reset the MCP25x should
@@ -81,7 +83,7 @@ MCP25X_IF_T *mcp2515_init(enum eCANBaudrate baud);
  */
 int mcp2515_reset();
 
-int mcp2515_data_ready(MCP25X_IF_T *mcpif);
+int mcp2515_data_ready(MCP2515_T *mcpif);
 
 /**
  * @brief	Handle the incomming interrupt by /INT pin.
