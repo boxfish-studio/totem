@@ -154,8 +154,11 @@ void setup_spi_dma() // uint8_t spiNumber, uint8_t location, bool master)
 
     setupDma();
 
-    vSemaphoreCreateBinary(sem_spi_dma);
-    vSemaphoreCreateBinary(mut_spi_dma);
+    if (sem_spi_dma == NULL)
+    	vSemaphoreCreateBinary(sem_spi_dma);
+
+    if (mut_spi_dma == NULL)
+    	vSemaphoreCreateBinary(mut_spi_dma);
 
 }
 

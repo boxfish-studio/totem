@@ -18,27 +18,25 @@
 
 #include "trace.h"
 
-struct MCP2515_T
-{
-    USART_TypeDef *usart;
-    int port;
-};
-
-static MCP2515_T mcp2515;
-
+/***   Global variables   ***/
 extern xQueueHandle q_can_handle;
 
-static int mcp_write(uint8_t address, uint8_t data);
-static int mcp_write_canrts(uint8_t buffer);
-static uint8_t mcp_read(char address);
-static int setupClock(enum eCANBaudrate baudrate);
+/***   Local functions   ***/
+static uint8_t mcp2515_read(char address);
+static uint8_t mcp2515_readStatus(uint8_t *status);
+static uint8_t mcp2515_write(uint8_t address, uint8_t data);
+static uint8_t mcp2515_sendbuffer(uint8_t buffer, uint8_t priority);
+static uint8_t setupClock(enum eCANBaudrate baudrate);
 static void setupFilter(enum eCANAddressing address, uint32_t filter);
 
-MCP2515_T *mcp2515_init(enum eCANBaudrate baud)
+/**
+ * @brief 	Initialize MCP2515 CAN device
+ * @param 	baud    Baudrate for the CAN transmission
+ * @return	1 if successful, 0 otherwise
+ */
+uint8_t mcp2515_init(enum eCANBaudrate baud)
 {
 	uint8_t caninte;
-
-    mcp2515.usart = USART2;
 
     CMU_ClockEnable(cmuClock_USART2, true);
     CMU_ClockEnable(cmuClock_GPIO, true);
@@ -46,50 +44,44 @@ MCP2515_T *mcp2515_init(enum eCANBaudrate baud)
     setup_spi_dma();
 
     if (!mcp2515_reset())
-    	return NULL;
+    	return 0;
 
     /* set clock configuration */
     if (!setupClock(baud))
-    	return NULL;
+    	return 0;
 
     /* configure mask and filters for the rx frames */
     setupFilter(STANDARD_ADDRESSING, 0);
 
     /* set receive configuration */
-    if (!mcp_write(MCP2515_RXB0CTRL, ((MCP2515_RXCTRL_BUF_FILTERS_OFF << MCP2515_RXCTRL_BUF_SHIFT) | MCP2515_RX0CTRL_BUKT)))
-    	return NULL;
+    if (!mcp2515_write(MCP2515_RXB0CTRL, ((MCP2515_RXCTRL_BUF_FILTERS_OFF << MCP2515_RXCTRL_BUF_SHIFT) | MCP2515_RX0CTRL_BUKT)))
+    	return 0;
 
     /* config /INT as interrupt notification for all RX buffer */
-    caninte = mcp_read(MCP2515_CANINTE);
-    mcp_write(MCP2515_CANINTE, (caninte | MCP2515_INT_RX1IE | MCP2515_INT_RX0IE));
+    caninte = 0; //mcp2515_read(MCP2515_CANINTE);
+    if (!mcp2515_write(MCP2515_CANINTE, (caninte | MCP2515_INT_RX1IE | MCP2515_INT_RX0IE)))
+    	return 0;
 
     /* reset all interrupts */
-    mcp_write(MCP2515_CANINTF, 0);
+    if (!mcp2515_write(MCP2515_CANINTF, 0))
+    	return 0;
 
     /* setup interrupt handling for /INT pin */
     set_gpio_callback(PORT_CAN_INT, PIN_CAN_INT, mcp2515_irq_handler, false, true);
 
     /* set and check opmode */
-    mcp_write(MCP2515_CANCTRL, (MCP2515_CTRL_REQOP_NORMAL << MCP2515_CTRL_REQOP_SHIFT));
+    if (!mcp2515_write(MCP2515_CANCTRL, (MCP2515_CTRL_REQOP_NORMAL << MCP2515_CTRL_REQOP_SHIFT)))
+    	return 0;
 
-#if (DEBUG_PRINT == 1)
-
-    uint8_t rec = mcp_read(MCP_CANCTRL);
-    /* Debug output */
-    char outstr[50];
-    snprintf(outstr, 50, "Mode: 0x%x - ", rec);
-    PRINT(outstr);
-
-    if (rec != mcp_opmode)
-    {
-        PRINT("WROOOONG!\n");
-    }
-#endif
-
-    return &mcp2515;
+    return 1;
 }
 
-int mcp2515_reset()
+/**
+ * @brief 	Reset MCP device. After the reset the MCP2515 should
+ * 			be in configuration mode.
+ * @return 	1 if successful, 0 otherwise
+ */
+uint8_t mcp2515_reset()
 {
     uint8_t txcnf[5];
     uint8_t rxstat[10];
@@ -120,110 +112,146 @@ int mcp2515_reset()
     return 1;
 }
 
-void mcp2515_inthandler(CAN_Frame_t *frame)
+/**
+ * @brief 	MCP2515 interruption register handler. The function checks which
+ * 			flag of the interruption register is set and cleans all.
+ * @param 	frame	Pointer to structure where save the frame data from RX buffer
+ */
+void mcp2515_readBufferFromInterrupt(CAN_Frame_t *frame)
 {
-    uint8_t interrupts    = mcp_read(MCP2515_CANINTF);
+    uint8_t interrupts = mcp2515_read(MCP2515_CANINTF);
 
+    // RX buffer 0
     if (interrupts & MCP2515_FLAG_RX0IF)
     {
-        mcp2515_rxcanbuf(0 /*buffer*/, frame);
+        mcp2515_readBuffer(0, frame);
         interrupts &= ~MCP2515_FLAG_RX0IF;
     }
 
+    else // Added else because the frame cannot support 2 data
+
+    // RX buffer 1
     if (interrupts & MCP2515_FLAG_RX1IF)
     {
-        mcp2515_rxcanbuf(1 /*buffer*/, frame);
+        mcp2515_readBuffer(1, frame);
         interrupts &= ~MCP2515_FLAG_RX1IF;
     }
 
     /* clear the received buffer interrupt bit */
-    mcp_write(MCP2515_CANINTF, interrupts);
+    mcp2515_write(MCP2515_CANINTF, interrupts);
 }
 
-int mcp2515_rxcanbuf(int rxbufno, CAN_Frame_t *candata)
+/**
+ * @brief 	Read a buffer of 2 available from MCP2515 device
+ * @param	rxbufno	Number of the buffer to receive the data from
+ * @param 	frame	Pointer to structure where save the frame data from RX buffer
+ */
+uint8_t mcp2515_readBuffer(uint8_t rxbufno, CAN_Frame_t *frame)
 {
 	uint8_t txbuf[15];
 	uint8_t rxbuf[15];
 
 	char rxbufstart = MCP2515_SPI_READ_RX_BUFFER;
-    rxbufstart |= ((((rxbufno == 0) ? MCP2515_RXB0CTRL : MCP2515_RXB1CTRL) >> 2) & 0x04 );
+	// First buffer 0, second buffer 1
+    rxbufstart |= (rxbufno == 0) ? 0b000 : 0b100; // Check Figure 12-3 from MCP2515 datasheet
 
     txbuf[0] = rxbufstart;
 
     spi_dma_transfer(txbuf, rxbuf, 14);
-    memmove(candata->f, rxbuf + 1, 13);
+    memmove(frame->f, rxbuf + 1, 13);
 
     return 1;
 }
 
-int mcp2515_txcanbuf(int txbufno, CAN_Frame_t *candata)
+
+uint8_t mcp2515_send(CAN_Frame_t *frame)
+{
+	static uint8_t priority = 3;
+	uint8_t status, insert, timeout_cnt = 0;
+
+	status = 0xFF;
+
+	while ((status & 0x54) == 0x54) {
+
+		// check timeout
+		if (timeout_cnt >= MAX_TIMEOUT_CNT)
+		{
+			vTracePrint(NULL, "[CAN] ERROR! TX buf full -> Throw message away!");
+			return 0;
+		}
+
+		if (!mcp2515_readStatus(&status))
+			return 0;
+
+		if (!(status & 0x54)) {
+			insert = 2;
+			priority = 3;
+			PRINT("Envia por 2\n");
+			continue;
+		}
+
+		if ((status & 0x54) == 0x54){
+			timeout_cnt++;
+			continue;
+		}
+
+		if (status & 0x04) {
+			priority--;
+			if (status & 0x40) {
+				insert = 2;
+				PRINT("Envia por 2\n");
+			} else {
+				insert = 1;
+				PRINT("Envia por 1\n");
+			}
+			continue;
+		}
+
+		if (status & 0x10) {
+			insert = 0;
+			PRINT("Envia por 0\n");
+		} else {
+			insert = 1;
+			PRINT("Envia por 1\n");
+		}
+	}
+
+    mcp2515_txcanbuf(insert, frame);
+
+    mcp2515_sendbuffer(insert, priority);
+
+    return 1;
+}
+
+uint8_t mcp2515_txcanbuf(uint8_t txbufno, CAN_Frame_t *candata)
 {
     uint8_t txbuf[15];
 
     if (txbufno > 2)
     	return 0;
 
-    txbuf[0] = MCP2515_SPI_LOAD_TX_BUFFER | (txbufno << 1);
+    txbuf[0] = MCP2515_SPI_LOAD_TX_BUFFER | ((1 << txbufno) & 0x06); // 0x07 mask to protect overflow and buffer 0
     memmove(txbuf + 1, candata->f, 13);
-    spi_dma_transfer(txbuf, NULL /*rxbuf*/, 14);
-
-    return 1;
-}
-
-int mcp2515_rxcan(int rxbuf, CAN_Frame_t *candata)
-{
-	int rxbufstart = MCP2515_DATA_SIDH;
-    rxbufstart |= (rxbuf == 0) ? MCP2515_RXB0CTRL : MCP2515_RXB1CTRL;
-
-    for (int i = 0; i < 13; i++)
-    {
-        candata->f[i] = mcp_read(rxbufstart);
-        rxbufstart++;
-    }
-
-    return 1;
-}
-
-int mcp2515_txcan(CAN_Frame_t *data)
-{
-    int timeout_cnt = 0;
-
-    uint8_t txctrl = mcp_read(MCP2515_TXB0CTRL);
-
-    while ((txctrl & MCP2515_TXCTRL_RTS) != 0)
-    {
-        timeout_cnt++;
-
-        txctrl = mcp_read(MCP2515_TXB0CTRL);
-
-        if (timeout_cnt >= MAX_TIMEOUT_CNT)
-        {
-            vTracePrint(NULL, "[CAN] ERROR! TX buf full -> Throw message away!");
-            return 0;
-        }
-    }
-
-    mcp2515_txcanbuf(0, data);
-
-    mcp_write_canrts(MCP2515_SPI_RTS | 0x01); // Send message RTS to TXB0
+    spi_dma_transfer(txbuf, NULL, 14);
 
     return 1;
 }
 
 void mcp2515_get_errors(uint8_t *errflags, uint8_t *txerr, uint8_t *rxerr)
 {
-    *errflags = mcp_read(MCP2515_EFLG);
-    *txerr    = mcp_read(MCP2515_TEC);
-    *rxerr    = mcp_read(MCP2515_REC);
+    *errflags = mcp2515_read(MCP2515_EFLG);
+    *txerr    = mcp2515_read(MCP2515_TEC);
+    *rxerr    = mcp2515_read(MCP2515_REC);
 }
 
 void mcp2515_irq_handler(void)
 {
     signed portBASE_TYPE pxHigherPriorityTaskWoken = pdFALSE;
+    uint8_t loopCnt = 0;
+
     CAN_Queue_t can_data;
     can_data.dir = CAN_QUEUE_IN;
 
-    int loopCnt = 0;
     while (xQueueSendFromISR(q_can_handle, (void *)&can_data, &pxHigherPriorityTaskWoken) ==
                pdFALSE &&
            loopCnt < 10)
@@ -235,33 +263,7 @@ void mcp2515_irq_handler(void)
     portEND_SWITCHING_ISR(pxHigherPriorityTaskWoken);
 }
 
-static int mcp_write(uint8_t address, uint8_t data)
-{
-    uint8_t txbuf[5];
-    uint8_t rxbuf[5];
-
-    txbuf[0] = MCP2515_SPI_WRITE;
-    txbuf[1] = address;
-    txbuf[2] = data;
-
-    spi_dma_transfer(txbuf, rxbuf, 3);
-
-    return 1;
-}
-
-static int mcp_write_canrts(uint8_t buffer)
-{
-    uint8_t txbuf[5];
-    uint8_t rxbuf[5];
-
-    txbuf[0] = buffer;
-
-    spi_dma_transfer(txbuf, rxbuf, 1);
-
-    return 1;
-}
-
-static uint8_t mcp_read(char address)
+static uint8_t mcp2515_read(char address)
 {
     uint8_t txbuf[3];
     uint8_t rxbuf[5];
@@ -277,9 +279,55 @@ static uint8_t mcp_read(char address)
     return data;
 }
 
+static uint8_t mcp2515_readStatus(uint8_t *status)
+{
+    uint8_t txbuf[3];
+    uint8_t rxbuf[3];
+
+    txbuf[0] = MCP2515_SPI_READ_STATUS;
+    txbuf[1] = 0;
+    txbuf[2] = 0;
+
+    spi_dma_transfer(txbuf, rxbuf, 3);
+    *status = rxbuf[2];
+
+    return 1;
+}
+
+static uint8_t mcp2515_write(uint8_t address, uint8_t data)
+{
+    uint8_t txbuf[5];
+    uint8_t rxbuf[5];
+
+    txbuf[0] = MCP2515_SPI_WRITE;
+    txbuf[1] = address;
+    txbuf[2] = data;
+
+    spi_dma_transfer(txbuf, rxbuf, 3);
+
+    return 1;
+}
+
+static uint8_t mcp2515_sendbuffer(uint8_t buffer, uint8_t priority)
+{
+    uint8_t txbuf[5];
+    uint8_t rxbuf[5];
+
+    if ((buffer > 2) || (priority > 3))
+    	return 0;
+
+    txbuf[0] = MCP2515_SPI_WRITE;
+    txbuf[1] = (((MCP2515_TXB0CTRL >> 4) + buffer) << 4);
+    txbuf[2] = (MCP2515_TXCTRL_RTS | (priority & 0x3));
+
+    spi_dma_transfer(txbuf, rxbuf, 3);
+
+    return 1;
+}
+
 /* Setup clock for CAN transmission
  */
-static int setupClock(enum eCANBaudrate baudrate)
+static uint8_t setupClock(enum eCANBaudrate baudrate)
 {
     uint8_t clk_conf1, clk_conf2, clk_conf3;
 
@@ -321,11 +369,11 @@ static int setupClock(enum eCANBaudrate baudrate)
             break;
     }
 
-    if (!mcp_write(MCP2515_CNF1, clk_conf1))
+    if (!mcp2515_write(MCP2515_CNF1, clk_conf1))
     	return 0;
-    if (!mcp_write(MCP2515_CNF2, clk_conf2))
+    if (!mcp2515_write(MCP2515_CNF2, clk_conf2))
     	return 0;
-    if (!mcp_write(MCP2515_CNF3, clk_conf3))
+    if (!mcp2515_write(MCP2515_CNF3, clk_conf3))
     	return 0;
 
     return 1;
@@ -353,58 +401,34 @@ static void setupFilter(enum eCANAddressing address, uint32_t filter)
     switch (address)
     {
         case STANDARD_ADDRESSING:
-            mask = 0x000007FF; // 11 bit std address
+            mask = 0x000007FF; // 11 bit standard address
 
-            mcp_write(MCP2515_RXM0 | MCP2515_FILTMASK_SIDH, (uint8_t)((mask >> 3) & 0xff));
-            mcp_write(MCP2515_RXM0 | MCP2515_FILTMASK_SIDL, (uint8_t)((mask << 5) & 0xe0));
-            mcp_write(MCP2515_RXM0 | MCP2515_FILTMASK_EID8, (uint8_t)0);
-            mcp_write(MCP2515_RXM0 | MCP2515_FILTMASK_EID0, (uint8_t)0);
+            mcp2515_write(MCP2515_RXM0 | MCP2515_FILTMASK_SIDH, (uint8_t)((mask >> 3) & 0xff));
+            mcp2515_write(MCP2515_RXM0 | MCP2515_FILTMASK_SIDL, (uint8_t)((mask << 5) & 0xe0));
+            mcp2515_write(MCP2515_RXM0 | MCP2515_FILTMASK_EID8, (uint8_t)0);
+            mcp2515_write(MCP2515_RXM0 | MCP2515_FILTMASK_EID0, (uint8_t)0);
 
-            mcp_write(MCP2515_RXM1 | MCP2515_FILTMASK_SIDH, (uint8_t)((mask >> 3) & 0xff));
-            mcp_write(MCP2515_RXM1 | MCP2515_FILTMASK_SIDL, (uint8_t)((mask << 5) & 0xe0));
-            mcp_write(MCP2515_RXM1 | MCP2515_FILTMASK_EID8, (uint8_t)0);
-            mcp_write(MCP2515_RXM1 | MCP2515_FILTMASK_EID0, (uint8_t)0);
+            mcp2515_write(MCP2515_RXM1 | MCP2515_FILTMASK_SIDH, (uint8_t)((mask >> 3) & 0xff));
+            mcp2515_write(MCP2515_RXM1 | MCP2515_FILTMASK_SIDL, (uint8_t)((mask << 5) & 0xe0));
+            mcp2515_write(MCP2515_RXM1 | MCP2515_FILTMASK_EID8, (uint8_t)0);
+            mcp2515_write(MCP2515_RXM1 | MCP2515_FILTMASK_EID0, (uint8_t)0);
 
             break;
         case EXTENDED_ADDRESSING:
-        case STANDARD_ADDRESSING_DATA_FILTER: /* the first two data bytes are checked too */
-            mask = 0x03ffffff;                // 11 bit std address, 17 bit extended address
+        case STANDARD_ADDRESSING_DATA_FILTER:
+            mask = 0x03ffffff;
             break;
         default:
             mask = 0x0;
             break;
     }
-    /* STANDARD_ADDRESSING is used */
 
-    /* Add filtering */
-    /* If no filter are provided accept everything */
+    /* If no filter is provided, accept everything */
     if (filter == 0)
     {
         for (int i = 0; i < 12; i++)
-            mcp_write(MCP2515_RXF0 | (MCP2515_FILTMASK_SIDH + i), 0);
+            mcp2515_write(MCP2515_RXF0 | (MCP2515_FILTMASK_SIDH + i), 0);
         for (int i = 0; i < 12; i++)
-            mcp_write(MCP2515_RXF3 | (MCP2515_FILTMASK_SIDH + i), 0);
+            mcp2515_write(MCP2515_RXF3 | (MCP2515_FILTMASK_SIDH + i), 0);
     }
-
-    /* DEBUG print masks: */
-#if (DEBUG_PRINT == 1)
-    char outstr[100];
-    memset(outstr, 0, 100);
-    uint8_t tmp;
-
-    snprintf(outstr, 100, "%s", "Filtermask: ");
-
-    tmp = mcp_read(MCP_RXM0SIDH);
-    snprintf(outstr, 100, "%s 0x%x", outstr, tmp);
-    tmp = mcp_read(MCP_RXM0SIDL);
-    snprintf(outstr, 100, "%s 0x%x", outstr, tmp);
-
-    tmp = mcp_read(MCP_RXM1SIDH);
-    snprintf(outstr, 100, "%s 0x%x", outstr, tmp);
-    tmp = mcp_read(MCP_RXM1SIDL);
-    snprintf(outstr, 100, "%s 0x%x", outstr, tmp);
-
-    snprintf(outstr, 100, "%s\n", outstr);
-    PRINT(outstr);
-#endif
 }

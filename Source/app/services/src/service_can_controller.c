@@ -9,8 +9,6 @@
 
 static xTaskHandle handle_can_controller;
 
-static MCP2515_T *mcp2515;
-
 extern xQueueHandle q_can_handle;
 extern xSemaphoreHandle sem_can;
 
@@ -40,16 +38,14 @@ void service_can_controller(void *args) {
     portTickType xLastWakeTime = xTaskGetTickCount();
     vTaskDelayUntil(&xLastWakeTime, 500 / portTICK_RATE_MS);
 
-    mcp2515 = mcp2515_init(CAN_BAUD_250KHZ); // filter,
-
-    if (mcp2515 != NULL)
-    {
-        PRINT("[CAN] successfull initialized\n");
-    }
-    else
-    {
+    while (!mcp2515_init(CAN_BAUD_250KHZ)) {
+        /* wait till the device is settled and configured */
+        portTickType xLastWakeTime = xTaskGetTickCount();
+        vTaskDelayUntil(&xLastWakeTime, 500 / portTICK_RATE_MS);
         PRINT("[CAN] NOT initialized\n");
     }
+
+	PRINT("[CAN] successfull initialized\n");
 
 	for (;;) {
 
@@ -61,7 +57,7 @@ void service_can_controller(void *args) {
 		{
 
 			/* Wait for data received by /INT signal from MCP2515 */
-			mcp2515_inthandler(&rxcan);
+			mcp2515_readBufferFromInterrupt(&rxcan);
 			fill_param_struct();
 			PRINT("Message received through CAN\n");
 		}
@@ -73,7 +69,7 @@ void service_can_controller(void *args) {
 			txcan = &mssg_queue.canframe;
 			if (errorstate != CAN_BUS_OFF)
 			{
-				mcp2515_txcan(txcan);
+				mcp2515_send(txcan);
 			}
 			else
 			{

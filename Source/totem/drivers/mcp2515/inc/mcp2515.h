@@ -15,18 +15,16 @@
 #define MAX_TIMEOUT_CNT             3
 
 enum eDirection {
-    CAN_QUEUE_OUT = 0, ///< Data from software to BUS
+    CAN_QUEUE_OUT, ///< Data from software to BUS
     CAN_QUEUE_IN  ///<- Data from BUS to software
 };
 
-typedef struct MCP2515_T MCP2515_T;
-
 typedef struct {
-    uint8_t sidh; // TXBnSIDH
-    uint8_t sidl; // TXBnSIDL
-    uint8_t eid8; // extended identifier high
-    uint8_t eid0; // extended identifier low
-    uint8_t dlc; // data lenght code
+    uint8_t sidh;
+    uint8_t sidl;
+    uint8_t eid8;
+    uint8_t eid0;
+    uint8_t dlc; // Data Lenght Code
     uint8_t D0;
     uint8_t D1;
     uint8_t D2;
@@ -69,44 +67,20 @@ enum eCANBaudrate {
     CAN_BAUD_1000KHZ
 };
 
-/**
- * @brief 	Initialize MCP2515 CAN device
- * @param 	baud    Baudrate for the CAN transmission
- * @return	Device descriptor
- */
-MCP2515_T *mcp2515_init(enum eCANBaudrate baud);
+uint8_t mcp2515_init(enum eCANBaudrate baud);
 
-/**
- * @brief 	Reset MCP device. After the reset the MCP25x should
- * 			be in configuration mode.
- * @return 	0 if reset is successful, 1 otherwise
- */
-int mcp2515_reset();
+uint8_t mcp2515_reset();
 
-int mcp2515_data_ready(MCP2515_T *mcpif);
+void mcp2515_readBufferFromInterrupt(CAN_Frame_t *frame);
 
-/**
- * @brief	Handle the incomming interrupt by /INT pin.
- *
- * @param	mcp2515	Device handler
- */
-void mcp2515_inthandler(CAN_Frame_t *frame);
+uint8_t mcp2515_readBuffer(uint8_t rxbufno, CAN_Frame_t *frame);
 
-int mcp2515_rxcan( int buffer, CAN_Frame_t *data); //MCP25X_IF_T *mcpif,
+uint8_t mcp2515_send(CAN_Frame_t *frame);
 
-int mcp2515_txcan( CAN_Frame_t *data); //MCP25X_IF_T *mcpif,
+uint8_t mcp2515_txcanbuf(uint8_t txbufno, CAN_Frame_t *candata);
 
-/* transfer functions to load/store a complete RX/TX buffer */
-int mcp2515_rxcanbuf( int rxbufno, CAN_Frame_t *candata); //MCP25X_IF_T *mcp,
-
-int mcp2515_txcanbuf(int txbufno, CAN_Frame_t *candata); //MCP25X_IF_T *mcp,
-
-#if (DEBUG_PRINT == 1)
-int mcp2515_debug(MCP25X_IF_T *mcpif);
-#endif
+void mcp2515_get_errors(uint8_t *errflags, uint8_t *txerr, uint8_t *rxerr);
 
 void mcp2515_irq_handler(void);
-
-void mcp2515_get_errors( uint8_t *errflags, uint8_t *txerr, uint8_t *rxerr); //MCP25X_IF_T *mcpif,
 
 #endif /* MCP2515_H_ */
