@@ -27,17 +27,17 @@ void service_can_data_handler(void *args) {
 	traceString stackTrace = INIT_STACKTRACE(CAN_DATA_HANDLER_SERVICE_NAME);
 
 	CAN_Frame_t frame = { .s = {
-			.sidh = 0x666 >> 3,
-			.sidl = 0x666 << 5,
+			.sidh = (uint8_t) (0x666 >> 3),
+			.sidl = (uint8_t) (0x666 << 5),
 			.dlc = 8,
-			.D0 = 'L',
+			.D0 = 'T',
 			.D1 = 'o',
-			.D2 = 'L',
-			.D3 = 'a',
-			.D4 = 'T',
-			.D5 = 'e',
-			.D6 = 's',
-			.D7 = 't',
+			.D2 = 't',
+			.D3 = 'e',
+			.D4 = 's',
+			.D5 = 't',
+			.D6 = 'e',
+			.D7 = 'm',
 	}};
 
     portTickType xLastWakeTime = xTaskGetTickCount();
@@ -48,10 +48,14 @@ void service_can_data_handler(void *args) {
 		mcp2515_send(&frame);
 		mcp2515_send(&frame);
 		mcp2515_send(&frame);
-		mcp2515_send(&frame);
-		mcp2515_send(&frame);
 
         vTaskDelay(1000 / portTICK_RATE_MS);
+
+        mcp2515_sleepMode(1);
+
+        vTaskDelay(10000 / portTICK_RATE_MS);
+
+        mcp2515_sleepMode(0);
 
 		PRINT_STACKTRACE(stackTrace);
 	}

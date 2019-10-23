@@ -10,7 +10,7 @@
 
 #include "totem_sys.h"
 
-static const char LEDS_SERVICE_NAME[] = "leds";
+#define LEDS_SERVICE_NAME	"leds"
 
 void service_led_setup(const char * service_name, UBaseType_t service_priority);
 void service_led(void *args);

@@ -10,7 +10,7 @@
 
 #include "totem_sys.h"
 
-static const char CAN_DATA_HANDLER_SERVICE_NAME[] = "can_data";
+#define CAN_DATA_HANDLER_SERVICE_NAME	"can_data"
 
 void service_can_data_handler_setup(const char * service_name, UBaseType_t service_priority);
 void service_can_data_handler(void *args);

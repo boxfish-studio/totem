@@ -12,7 +12,7 @@
 
 #include "mcp2515.h"
 
-static const char CAN_CONTROLLER_SERVICE_NAME[] = "can_data";
+#define CAN_CONTROLLER_SERVICE_NAME		"can_controller"
 
 void service_can_controller_setup(const char * service_name, UBaseType_t service_priority);
 void service_can_controller(void *args);

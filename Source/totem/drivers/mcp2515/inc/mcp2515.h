@@ -53,7 +53,7 @@ enum eCANAddressing {
 };
 
 enum eCANErrorState {
-    CAN_NO_ERROR,        /* aka Error Active State */
+    CAN_NO_ERROR,        /* Error Active State */
     CAN_ERROR_PASSIVE,  /* REC>127 or TEC>127 */
     CAN_BUS_OFF        /* TEC>255 */
 };
@@ -70,6 +70,8 @@ enum eCANBaudrate {
 uint8_t mcp2515_init(enum eCANBaudrate baud);
 
 uint8_t mcp2515_reset();
+
+uint8_t mcp2515_sleepMode(uint8_t sleep);
 
 void mcp2515_readBufferFromInterrupt(CAN_Frame_t *frame);
 

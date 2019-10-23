@@ -40,7 +40,7 @@ int main(void) {
 	service_can_controller_setup(CAN_CONTROLLER_SERVICE_NAME, TASK_PRIORITY_MEDIUM);
 
 	// Watchdog service
-	service_watchdog_setup(WATCHDOG_SERVICE_NAME, TASK_PRIORITY_HIGH);
+	//service_watchdog_setup(WATCHDOG_SERVICE_NAME, TASK_PRIORITY_HIGH);
 
 	totem_start();
 

@@ -10,7 +10,8 @@
 
 #include <stdint.h>
 
-void setup_spi_dma();
+void spi_dma_setup();
 void spi_dma_transfer(uint8_t *txBuffer, uint8_t *rxBuffer, int bytes);
+void spi_dma_waitRX();
 
 #endif /* TOTEM_SPI_DMA_H_ */
