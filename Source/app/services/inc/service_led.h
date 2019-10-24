@@ -1,5 +1,5 @@
 /*
- * service_led.h
+ * 	service_led.h
  *
  *  Created on: Oct 10, 2019
  *      Author: Miguel Villalba <mvillalba@boxfish.studio>
@@ -10,7 +10,7 @@
 
 #include "totem_sys.h"
 
-static const char LEDS_SERVICE_NAME[] = "leds";
+#define LEDS_SERVICE_NAME	"leds"
 
 void service_led_setup(const char * service_name, UBaseType_t service_priority);
 void service_led(void *args);
