@@ -22,18 +22,20 @@
 extern "C" {
 #endif
 
-#define TOTEM_VERSION_RELEASE	0
-#define TOTEM_VERSION_BUILD		0
-#define TOTEM_VERSION_PATCH		1
+#define USB_PACKET_SIZE			37
 
-extern const char							ReportDescriptor[34];
+#define TOTEM_VERSION_RELEASE	0	//TODO REMOVE FROM HERE
+#define TOTEM_VERSION_BUILD		0	//TODO REMOVE FROM HERE
+#define TOTEM_VERSION_PATCH		1	//TODO REMOVE FROM HERE
 
-extern const void *                         USBDESC_HidDescriptor;
+extern const char ReportDescriptor[34];
 
-extern const USB_DeviceDescriptor_TypeDef   USBDESC_deviceDesc;
-extern const uint8_t                        USBDESC_configDesc[];
-extern const void * const                   USBDESC_strings[4];
-extern const uint8_t                        USBDESC_bufferingMultiplier[];
+extern const void * USBDESC_HidDescriptor;
+
+extern const USB_DeviceDescriptor_TypeDef USBDESC_deviceDesc;
+extern const uint8_t USBDESC_configDesc[];
+extern const void * const USBDESC_strings[4];
+extern const uint8_t USBDESC_bufferingMultiplier[];
 
 #ifdef __cplusplus
 }

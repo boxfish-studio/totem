@@ -20,7 +20,17 @@
 extern "C" {
 #endif
 
-#define USB_DEVICE         /* Compile stack for device mode. */
+//#define BUSPOWERED      /* Uncomment to build buspowered device */
+
+#if defined(BUSPOWERED)
+  #define USB_PWRSAVE_MODE (USB_PWRSAVE_MODE_ONSUSPEND | USB_PWRSAVE_MODE_ENTEREM2)
+#else
+  #define USB_PWRSAVE_MODE  (USB_PWRSAVE_MODE_ONVBUSOFF | USB_PWRSAVE_MODE_ONSUSPEND)
+#endif
+
+#define USB_USBC_32kHz_CLK   USB_USBC_32kHz_CLK_LFRCO
+
+#define USB_DEVICE        /* Compile stack for device mode. */
 
 /****************************************************************************
 **                                                                         **
@@ -38,33 +48,28 @@ extern "C" {
 
 /****************************************************************************
 **                                                                         **
-** Configuration options for the CDC driver.                               **
+** Configure serial port debug output.                                     **
 **                                                                         **
 *****************************************************************************/
+#if !defined(BUSPOWERED)
 
-#define CDC_CTRL_INTERFACE_NO   ( 0 )
-#define CDC_DATA_INTERFACE_NO   ( 1 )
+/* Define a function for transmitting a single char on the serial port. */
+#if DEBUG_PRINT
+extern int RETARGET_WriteChar(char c);
+#define USER_PUTCHAR  ITM_SendChar
+#endif
 
-/* Endpoint definitions. */
-#define CDC_EP_DATA_OUT   ( 0x01 ) /* Endpoint for CDC data reception.       */
-#define CDC_EP_DATA_IN    ( 0x81 ) /* Endpoint for CDC data transmission.    */
-#define CDC_EP_NOTIFY     ( 0x82 ) /* The notification endpoint (not used).  */
+/* Debug USB API functions (illegal input parameters etc.) */
+#define DEBUG_USB_API
 
-#define CDC_TIMER_ID              ( 0 )
-#define CDC_UART_TX_DMA_CHANNEL   ( 0 )
-#define CDC_UART_RX_DMA_CHANNEL   ( 1 )
-#define CDC_TX_DMA_SIGNAL         DMAREQ_UART1_TXBL
-#define CDC_RX_DMA_SIGNAL         DMAREQ_UART1_RXDATAV
-#define CDC_UART                  UART1
-#define CDC_UART_CLOCK            cmuClock_UART1
-#define CDC_UART_ROUTE            ( UART_ROUTE_RXPEN | \
-                                    UART_ROUTE_TXPEN | \
-                                    UART_ROUTE_LOCATION_LOC2 )
-#define CDC_UART_TX_PORT          gpioPortB
-#define CDC_UART_TX_PIN           9
-#define CDC_UART_RX_PORT          gpioPortB
-#define CDC_UART_RX_PIN           10
-#define CDC_ENABLE_DK_UART_SWITCH()
+#endif /* !defined(BUSPOWERED) */
+
+/****************************************************************************
+**                                                                         **
+** USB HID keyboard class device driver definitions.                       **
+**                                                                         **
+*****************************************************************************/
+#define HID_INTR_IN_EP_ADDR  0x81    /* Bit 7 must be set.                 */
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 /*
- * totem_common.h
+ * 	totem_common.h
  *
  *  Created on: Oct 13, 2019
  *      Author: Agustin Tena <atena@boxfish.studio>
@@ -8,20 +8,15 @@
 #ifndef TOTEM_COMMON_H_
 #define TOTEM_COMMON_H_
 
-#include "FreeRTOS.h"
-#include "FreeRTOSConfig.h"
-#include "task.h"
-#include "semphr.h"
-#include "queue.h"
+#include <totem_mcu_common.h>
+#include <totem_freertos_common.h>
 
+#include <descriptors.h>
+#include "hid.h"
 #include "pinmap.h"
 #include "_stdio.h"
 #include "trace.h"
-
-#include "em_chip.h"
-#include "em_cmu.h"
-#include "em_gpio.h"
-#include "em_rmu.h"
+#include "xmodem.h"
 
 #endif /* TOTEM_COMMON_H_ */
 

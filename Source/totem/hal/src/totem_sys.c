@@ -40,8 +40,6 @@ void totem_init() {
 	SLEEP_SleepBlockBegin((SLEEP_EnergyMode_t)(configSLEEP_MODE+1));
 #endif
 
-	HID_Init(NULL);
-
 #if TRACE_ENABLED
 	vTraceEnable(TRC_INIT);
 #endif

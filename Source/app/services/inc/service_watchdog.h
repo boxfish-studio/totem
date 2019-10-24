@@ -10,7 +10,7 @@
 
 #include "totem_sys.h"
 
-#define WATCHDOG_SERVICE_NAME	"watchdog"
+#define WATCHDOG_SERVICE_NAME		"watchdog"
 
 #define WATCHDOG_ENABLED 1
 
