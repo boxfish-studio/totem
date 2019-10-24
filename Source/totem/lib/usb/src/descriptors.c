@@ -38,12 +38,13 @@ SL_ALIGN(4)const char ReportDescriptor[34] __attribute__ ((aligned(4))) = {
 		};
 
 SL_ALIGN(4)const USB_DeviceDescriptor_TypeDef USBDESC_deviceDesc SL_ATTRIBUTE_ALIGN(4)
-= { .bLength = USB_DEVICE_DESCSIZE, .bDescriptorType =
-USB_DEVICE_DESCRIPTOR, .bcdUSB = 0x0200, .bDeviceClass = 0,
-		.bDeviceSubClass = 0, .bDeviceProtocol = 0, .bMaxPacketSize0 =
-		USB_FS_CTRL_EP_MAXSIZE, .idVendor = 0x10C4, .idProduct = 0x1002,
-		.bcdDevice = 0x0000, .iManufacturer = 1, .iProduct = 2, .iSerialNumber =
-				3, .bNumConfigurations = 1 };
+	= { .bLength = USB_DEVICE_DESCSIZE, 			.bDescriptorType = USB_DEVICE_DESCRIPTOR,
+		.bcdUSB = 0x0200, 							.bDeviceClass = 0,
+		.bDeviceSubClass = 0, 						.bDeviceProtocol = 0,
+		.bMaxPacketSize0 = USB_FS_CTRL_EP_MAXSIZE, 	.idVendor = 0x10C4,
+		.idProduct = 0x1002,						.bcdDevice = 0x0000,
+		.iManufacturer = 1, 						.iProduct = 2,
+		.iSerialNumber = 3,							.bNumConfigurations = 1 };
 
 #define CONFIG_DESCSIZE ( USB_CONFIG_DESCSIZE                   + \
                           USB_INTERFACE_DESCSIZE                + \
@@ -51,14 +52,14 @@ USB_DEVICE_DESCRIPTOR, .bcdUSB = 0x0200, .bDeviceClass = 0,
                          (USB_ENDPOINT_DESCSIZE * NUM_EP_USED))  /*HID Functional descriptor length*/
 
 SL_ALIGN(4)const uint8_t USBDESC_configDesc[] SL_ATTRIBUTE_ALIGN(4) = {
-/*** Configuration descriptor ***/
-USB_CONFIG_DESCSIZE, /* bLength                                   */
-USB_CONFIG_DESCRIPTOR, /* bDescriptorType                           */
-CONFIG_DESCSIZE, /* wTotalLength (LSB)                        */
-CONFIG_DESCSIZE >> 8, /* wTotalLength (MSB)                        */
-1, /* bNumInterfaces                            */
-1, /* bConfigurationValue                       */
-0, /* iConfiguration                            */
+		/*** Configuration descriptor ***/
+		USB_CONFIG_DESCSIZE, /* bLength                                   */
+		USB_CONFIG_DESCRIPTOR, /* bDescriptorType                           */
+		CONFIG_DESCSIZE, /* wTotalLength (LSB)                        */
+		CONFIG_DESCSIZE >> 8, /* wTotalLength (MSB)                        */
+		1, /* bNumInterfaces                            */
+		1, /* bConfigurationValue                       */
+		0, /* iConfiguration                            */
 #if defined(BUSPOWERED)
 		CONFIG_DESC_BM_RESERVED_D7, /* bmAttrib: Bus powered              */
 #else

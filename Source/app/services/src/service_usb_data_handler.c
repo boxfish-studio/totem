@@ -31,9 +31,9 @@ void service_usb_data_handler(void *args) {
 	uint8_t rx_counter = 0;
 
 	while (1) {
-		// Wait for data to come in from xmodem_communicator
+		// Wait for data to come in from usb_xmodem
 		xQueueReceive(q_xmodem_stack_out, &in_data, portMAX_DELAY);
-		PRINT("-------------------- Task task_xmodem_dispatcher running -----------------------------\n");
+		PRINT("-------------------- Service USB data handler running -----------------------------\n");
 
 		// Check whether data is meant for this task
 		if (in_data.type != XMODEM_RCV)
@@ -42,7 +42,7 @@ void service_usb_data_handler(void *args) {
 		// Check type of data and take appropriate action
 		switch (in_data.data[0]) {
 		case XMODEM_MASTER_MSG:
-			PRINT ("task_xmodem_dispatcher(): XMODEM_MASTER_MSG received\n");
+			PRINT ("service_usb_data_handler(): XMODEM_MASTER_MSG received\n");
 			xmodem_dispatch_master_msg(in_data.data, in_data.dat_len);
 
 			// Slave msgs half frequency that master msgs

@@ -20,16 +20,20 @@ static volatile uint8_t rcv_buf[USB_PACKET_SIZE] __attribute__ ((aligned(4)));
 
 static HID_SetReportFunc_t setReportFunc = NULL;
 
-static const USBD_Callbacks_TypeDef callbacks = { .usbReset = NULL,
-		.usbStateChange = HID_StateChangeEvent, .setupCmd = HID_SetupCmd,
-		.isSelfPowered = NULL, .sofInt = NULL };
+static const USBD_Callbacks_TypeDef callbacks = {
+		.usbReset = NULL,
+		.usbStateChange = HID_StateChangeEvent,
+		.setupCmd = HID_SetupCmd,
+		.isSelfPowered = NULL,
+		.sofInt = NULL };
 
-static const USBD_Init_TypeDef initStruct = { .deviceDescriptor =
-		&USBDESC_deviceDesc, .configDescriptor = USBDESC_configDesc,
-		.stringDescriptors = USBDESC_strings, .numberOfStrings =
-				sizeof(USBDESC_strings) / sizeof(void*),
-		.callbacks = &callbacks, .bufferingMultiplier =
-				USBDESC_bufferingMultiplier, .reserved = 0 };
+static const USBD_Init_TypeDef initStruct = {
+		.deviceDescriptor = &USBDESC_deviceDesc,
+		.configDescriptor = USBDESC_configDesc,
+		.stringDescriptors = USBDESC_strings,
+		.numberOfStrings = sizeof(USBDESC_strings) / sizeof(void*),
+		.callbacks = &callbacks,
+		.bufferingMultiplier = USBDESC_bufferingMultiplier, .reserved = 0 };
 
 static int OutputReportReceived(USB_Status_TypeDef status, uint32_t xferred,
 		uint32_t remaining);

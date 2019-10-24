@@ -55,7 +55,7 @@ void service_usb_xmodem_setup(const char * service_name,
 }
 
 void service_usb_xmodem(void *args) {
-	traceString stack_trace = INIT_STACKTRACE(COMMUNICATIONS_SERVICE_NAME);
+	traceString stack_trace = INIT_STACKTRACE(USB_XMODEM_SERVICE_NAME);
 
 	/********************** Local task variables ****************************/
 	xmodem_message_t in_data;
