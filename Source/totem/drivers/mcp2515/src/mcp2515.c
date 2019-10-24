@@ -18,6 +18,8 @@
 
 #include "trace.h"
 
+#define MAX_TIMEOUT	25	// Max 255
+
 /***   Global variables   ***/
 extern xQueueHandle q_can_handle;
 
@@ -33,6 +35,10 @@ static uint8_t mcp2515_write(uint8_t address, uint8_t data);
 static uint8_t mcp2515_sendbuffer(uint8_t buffer, uint8_t priority);
 static uint8_t setupClock(enum eCANBaudrate baudrate);
 static void setupFilter(enum eCANAddressing address, uint32_t filter);
+static void mcp2515_sleepAwaken();
+
+#define BIT_SET(address, bits)		mcp2515_bitModify(address, bits, 0xFF)
+#define BIT_CLEAR(address, bits)	mcp2515_bitModify(address, bits, 0x00)
 
 /**
  * @brief 	Initialize MCP2515 CAN device
@@ -59,7 +65,7 @@ uint8_t mcp2515_init(enum eCANBaudrate baud)
     	return 0;
 
     /* config /INT as interrupt notification for all RX buffer */
-    if (!mcp2515_bitModify(MCP2515_CANINTE, (MCP2515_INT_WAKIE | MCP2515_INT_RX1IE | MCP2515_INT_RX0IE), 0xFF))
+    if (!BIT_SET(MCP2515_CANINTE, (MCP2515_INT_WAKIE | MCP2515_INT_RX1IE | MCP2515_INT_RX0IE)))
     	return 0;
 
     /* reset all interrupts */
@@ -243,18 +249,31 @@ uint8_t mcp2515_send(CAN_Frame_t *frame)
  */
 uint8_t mcp2515_sleepMode(uint8_t sleep)
 {
+	uint8_t status, timeout = MAX_TIMEOUT;
 	if (sleep) {
 		mcp2515_write(MCP2515_CANINTF, 0);
 		if (!mcp2515_write(MCP2515_CANCTRL, MCP2515_CTRL_REQOP_SLEEP << MCP2515_CTRL_REQOP_SHIFT))
 			return 0;
-	    vTaskDelay(100 / portTICK_RATE_MS);
+		while (((status = mcp2515_read(MCP2515_CANSTAT)) >> MCP2515_CTRL_REQOP_SHIFT) != MCP2515_CTRL_REQOP_SLEEP){
+		    vTaskDelay(1 / portTICK_RATE_MS);
+		    timeout--;
+		    if (!timeout)
+		    	return 0;
+		}
+	    set_gpio_callback(PORT_CAN_INT, PIN_CAN_INT, mcp2515_sleepAwaken, false, true);
 	} else {
-		mcp2515_bitModify(MCP2515_CANINTF, MCP2515_FLAG_WAKIF, 0xFF);
-		if (!mcp2515_bitModify(MCP2515_CANINTE, MCP2515_INT_WAKIE, 0xFF))
+		BIT_SET(MCP2515_CANINTF, MCP2515_FLAG_WAKIF);
+		if (!BIT_SET(MCP2515_CANINTE, MCP2515_INT_WAKIE))
 			return 0;
 		if (!mcp2515_write(MCP2515_CANCTRL, MCP2515_CTRL_REQOP_NORMAL << MCP2515_CTRL_REQOP_SHIFT))
 			return 0;
-	    vTaskDelay(100 / portTICK_RATE_MS);
+		while (((status = mcp2515_read(MCP2515_CANSTAT)) >> MCP2515_CTRL_REQOP_SHIFT) != MCP2515_CTRL_REQOP_NORMAL){
+		    vTaskDelay(1 / portTICK_RATE_MS);
+		    timeout--;
+		    if (!timeout)
+		    	return 0;
+		}
+		BIT_CLEAR(MCP2515_CANINTF, MCP2515_FLAG_WAKIF);
 	}
 	return 1;
 
@@ -303,8 +322,6 @@ void mcp2515_irq_handler(void)
 
     CAN_Queue_t can_data;
     can_data.dir = CAN_QUEUE_IN;
-
-    // TODO: it detects the wake-up event
 
     while (xQueueSendFromISR(q_can_handle, (void *)&can_data, &pxHigherPriorityTaskWoken) ==
                pdFALSE &&
@@ -525,4 +542,11 @@ static void setupFilter(enum eCANAddressing address, uint32_t filter)
         for (int i = 0; i < 12; i++)
             mcp2515_write(MCP2515_RXF3 | (MCP2515_FILTMASK_SIDH + i), 0);
     }
+}
+
+static void mcp2515_sleepAwaken()
+{
+	PRINT_DRIVERTRACE(behaviourTrace, "Wake up", NULL);
+	PRINT("Wake up\n");
+	set_gpio_callback(PORT_CAN_INT, PIN_CAN_INT, mcp2515_irq_handler, false, true);
 }

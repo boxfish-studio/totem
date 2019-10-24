@@ -17,6 +17,8 @@ static void (*gpio_callbacks[EXTI_MAX])(void) = {0};
  * @return	None
  */
 void init_interrupts() {
+	uint8_t i;
+
 	NVIC_DisableIRQ(GPIO_EVEN_IRQn);
 	NVIC_ClearPendingIRQ(GPIO_EVEN_IRQn);
 	NVIC_SetPriority(GPIO_EVEN_IRQn, 6);
@@ -26,13 +28,18 @@ void init_interrupts() {
 	NVIC_ClearPendingIRQ(GPIO_ODD_IRQn);
 	NVIC_SetPriority(GPIO_ODD_IRQn, 6);
 	NVIC_EnableIRQ(GPIO_ODD_IRQn);
+
+	for (i = 0; i < EXTI_MAX; i++)
+		gpio_callbacks[i] = NULL;
 }
 
 void set_gpio_callback(uint8_t port, uint8_t pin, void (*callback)(void), uint8_t rising, uint8_t falling)
 {
+	if (gpio_callbacks[pin] == NULL) {
+	    GPIO_PinModeSet(port, pin, gpioModeInput, 0);
+	    GPIO_IntConfig(port, pin, rising, falling, 1);
+	}
     gpio_callbacks[pin] = callback;
-    GPIO_PinModeSet(port, pin, gpioModeInput, 0);
-    GPIO_IntConfig(port, pin, rising, falling, 1);
 }
 
 /**
