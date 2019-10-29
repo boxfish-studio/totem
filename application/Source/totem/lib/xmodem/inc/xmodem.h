@@ -8,8 +8,8 @@
 #ifndef XMODEM_H_
 #define XMODEM_H_
 
-#include "totem_mcu_common.h"
-#include "totem_freertos_common.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 // XMODEM CONFIG
 #define XMODEM_PACKET_SIZE          USB_PACKET_SIZE    		// Total Bytes of XMODEM message (inc. header + CRC)

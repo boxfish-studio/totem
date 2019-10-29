@@ -7,6 +7,11 @@
 
 #include "xmodem.h"
 
+#include "FreeRTOS.h"
+#include "semphr.h"
+#include "queue.h"
+#include <string.h>
+
 // Queues
 extern xQueueHandle q_xmodem_stack_in;
 

@@ -1,0 +1,5 @@
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/Release")
+file(GLOB source "Source/*.c" "Source/portable/GCC/ARM_CM3/*.c" "Source/portable/MemMang/*.c" "../FreeRTOSTrace/*.c")
+add_library(FreeRTOS STATIC ${source})
+target_include_directories(FreeRTOS PUBLIC Source/include/ Source/portable/GCC/ARM_CM3/ ../FreeRTOSTrace/Include/ ../../totem/lib/trace/inc/)
+target_link_libraries(FreeRTOS emlib)

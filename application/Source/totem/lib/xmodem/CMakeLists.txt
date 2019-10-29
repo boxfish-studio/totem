@@ -1,0 +1,5 @@
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/Release")
+file(GLOB source "src/*.c")
+add_library(xmodem STATIC ${source})
+target_include_directories(xmodem PUBLIC inc/)
+target_link_libraries(xmodem FreeRTOS)
