@@ -15,15 +15,13 @@ set(TOTEM_VERSION ${TOTEM_VERSION_RELEASE}.${TOTEM_VERSION_BUILD}.${TOTEM_VERSIO
 # Macro to adapt the Eclipse project to support both compilations
 # ==============================================================================
 
-find_package(Python3 REQUIRED)
-
-set(PYTHON_ADAPT_SCRIPT ${CMAKE_SOURCE_DIR}/.cmake/exclude_eclipse.py)
+set(ADAPT_ECLIPSE_SCRIPT ${CMAKE_SOURCE_DIR}/.cmake/exclude_eclipse.sh)
 
 macro(ADAPT_ECLIPSE_PROJECT)
   execute_process(
-    COMMAND ${Python3_EXECUTABLE} ${PYTHON_ADAPT_SCRIPT} ${CMAKE_SOURCE_DIR}/.cproject
+    COMMAND bash ${ADAPT_ECLIPSE_SCRIPT} ${CMAKE_SOURCE_DIR}/.cproject
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMAND echo "adapting Eclipse project to support cmake structure"
+    COMMAND echo "\n\n-- Adapting Eclipse project to support cmake structure"
   )
 endmacro(ADAPT_ECLIPSE_PROJECT)
 
