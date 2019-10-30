@@ -28,9 +28,15 @@ pipeline {
                     echo 'cleaning...'
                     sh 'rm -rf *'
                     echo 'building...'
-                    sh 'cmake .'
+                    sh 'cmake ../source'
                     sh 'make -j all'
                 }
+            }
+        }
+        stage('archive') {
+            steps {
+                echo 'archiving...'
+                archiveArtifacts artifacts: 'source/Release/**.bin', onlyIfSuccessful: true
             }
         }
     }
