@@ -28,15 +28,15 @@ pipeline {
                     echo 'cleaning...'
                     sh 'rm -rf *'
                     echo 'building...'
-                    sh 'cmake ../source'
-                    sh 'make -j all'
+                    sh 'cmake ../source/application'
+                    sh 'make'
                 }
             }
         }
         stage('archive') {
             steps {
                 echo 'archiving...'
-                archiveArtifacts artifacts: 'source/Release/**.bin', onlyIfSuccessful: true
+                archiveArtifacts artifacts: 'source/application/Release/*.bin', onlyIfSuccessful: true
             }
         }
     }
