@@ -24,11 +24,11 @@ pipeline {
         }
         stage('build Totem') {
             steps {
-                dir('application') {
+                dir('source/application') {
                     echo 'cleaning...'
-                    sh 'rm -rf *'
+                    sh 'rm -rf $(find . -name "CMakeFiles" -o -name "CMakeCache.txt" -o -name "Makefile" -o -name "cmake_install.cmake" -o -name "Release")'
                     echo 'building...'
-                    sh 'cmake ../source/application'
+                    sh 'cmake .'
                     sh 'make'
                 }
             }
