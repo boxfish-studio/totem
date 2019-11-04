@@ -14,6 +14,8 @@
  ******************************************************************************/
 #include "descriptors.h"
 
+#include "totem_version.h"
+
 // From Book "USB Complete"
 SL_ALIGN(4)const char ReportDescriptor[34] __attribute__ ((aligned(4))) = {
 		0x06, 0xFF, 0xA0,          				//Usage Page Vendor defined
@@ -94,7 +96,7 @@ SL_ALIGN(4)const uint8_t USBDESC_configDesc[] SL_ATTRIBUTE_ALIGN(4) = {
 		/*** Endpoint descriptor ***/
 		USB_ENDPOINT_DESCSIZE, /* bLength               */
 		USB_ENDPOINT_DESCRIPTOR, /* bDescriptorType       */
-		0x81, /* bEndpointAddress (IN) */
+		HID_INTR_IN_EP_ADDR, /* bEndpointAddress (IN) */
 		USB_EPTYPE_INTR, /* bmAttributes          */
 		USB_FS_INTR_EP_MAXSIZE, /* wMaxPacketSize (LSB)  */
 		0, /* wMaxPacketSize (MSB)  */

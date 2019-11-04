@@ -52,9 +52,13 @@ static int OutputReportReceived(USB_Status_TypeDef status, uint32_t xferred,
 static int OutputReportReceived(USB_Status_TypeDef status, uint32_t xferred,
 		uint32_t remaining) {
 	(void) remaining;
+	uint8_t data[USB_PACKET_SIZE];
 
 	if ((status == USB_STATUS_OK) && (setReportFunc != NULL)) {
-		setReportFunc((uint8_t**) &rcv_buf, (uint8_t) remaining);
+		if (xferred == USB_PACKET_SIZE && remaining == 0) {
+	        memcpy(data, &rcv_buf, USB_PACKET_SIZE);
+	        setReportFunc(data, (uint8_t) remaining);
+		}
 	}
 
 	return USB_STATUS_OK;

@@ -9,6 +9,8 @@
 
 // RTOS Queues
 extern xQueueHandle q_xmodem_stack_out;
+extern xQueueHandle q_xmodem_stack_in;
+extern xSemaphoreHandle sem_xmodem_data_ready;
 
 static xTaskHandle service_handler;
 
@@ -28,6 +30,7 @@ void service_usb_data_handler(void *args) {
 	traceString stack_trace = INIT_STACKTRACE(USB_DATA_HANDLER_SERVICE_NAME);
 
 	xmodem_message_t in_data;
+	xmodem_message_t out_data = {XMODEM_SEND, 11, {'h', 'e', 'l', 'l', 'o', ' ', 'h', 'o', 's', 't', '!'}};
 	uint8_t rx_counter = 0;
 
 	while (1) {
@@ -40,11 +43,12 @@ void service_usb_data_handler(void *args) {
 			continue;
 
 		// Check type of data and take appropriate action
+		xQueueSend(q_xmodem_stack_in, &out_data, 200);
+		xSemaphoreGive(sem_xmodem_data_ready);
 		switch (in_data.data[0]) {
 		case XMODEM_MASTER_MSG:
 			PRINT ("service_usb_data_handler(): XMODEM_MASTER_MSG received\n");
 			xmodem_dispatch_master_msg(in_data.data, in_data.dat_len);
-
 			// Slave msgs half frequency that master msgs
 			rx_counter++;
 			if (rx_counter >= 2) {

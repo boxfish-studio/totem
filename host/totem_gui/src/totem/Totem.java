@@ -65,7 +65,7 @@ public class Totem extends Observable implements Runnable {
 			public void deviceAttached(HidDevice device) {
 
 				if (device.getProductId() == TotemDeviceConfig.PRODUCT_ID) {
-					System.out.println(String.format("%s DETECTED", device.getProduct()));
+					System.out.println(String.format("%s CONNECTED", device.getProduct()));
 					if (start_usb()) {
 						get_usb_status().set_connected(true);
 					}
@@ -75,6 +75,7 @@ public class Totem extends Observable implements Runnable {
 			@Override
 			public void deviceDetached(HidDevice device) {
 				if (device.getProductId() == TotemDeviceConfig.PRODUCT_ID) {
+					System.out.println(String.format("%s DISCONNECTED", device.getProduct()));
 					stop_usb();
 					get_usb_status().set_connected(false);
 				}
@@ -137,7 +138,7 @@ public class Totem extends Observable implements Runnable {
 		while (!device_sync_thread.isInterrupted()) {
 
 			try {
-				Thread.sleep(30);
+				Thread.sleep(50);
 			} catch (InterruptedException ex) {
 				Thread.currentThread().interrupt();
 				return;
@@ -152,12 +153,12 @@ public class Totem extends Observable implements Runnable {
 
 	public void dispatch_xmodem(byte data[]) {
 
-		byte command = data[0];
-		byte subcommand = data[1];
+		/*byte command = data[0];
+		byte subcommand = data[1];*/
 
-		byte[] payload = Arrays.copyOfRange(data, 2, data.length); // remove command & subcommand
+		byte[] payload = Arrays.copyOfRange(data, 0, data.length); // remove command & subcommand
 
-		if (command == Data.Defs.XMODEM_CMD_A) {
+		/*if (command == Data.Defs.XMODEM_CMD_A) {
 
 			switch (subcommand) {
 
@@ -172,6 +173,12 @@ public class Totem extends Observable implements Runnable {
 			}
 		} else {
 			System.err.println("dispatch(): Received message not valid!");
-		}
+		}*/
+		
+		for (int i = 0; payload[i] != -1; i++)
+			System.out.print((char) payload[i]);
+		
+		System.out.println();
+		
 	}
 }

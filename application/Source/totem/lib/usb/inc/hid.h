@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-typedef void (*HID_SetReportFunc_t)(uint8_t **report, uint8_t remaining);
+typedef void (*HID_SetReportFunc_t)(uint8_t *report, uint8_t remaining);
 
 void HID_Init(HID_SetReportFunc_t callbackFunction);
 int HID_SetupCmd(const USB_Setup_TypeDef *setup);

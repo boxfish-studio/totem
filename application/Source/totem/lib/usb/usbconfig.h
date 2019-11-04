@@ -66,7 +66,7 @@ extern int RETARGET_WriteChar(char c);
 
 /****************************************************************************
 **                                                                         **
-** USB HID keyboard class device driver definitions.                       **
+** USB HID class device driver definitions.                       **
 **                                                                         **
 *****************************************************************************/
 #define HID_INTR_IN_EP_ADDR  0x81    /* Bit 7 must be set.                 */

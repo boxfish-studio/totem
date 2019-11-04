@@ -24,10 +24,7 @@ void init_interrupts() {
 	NVIC_EnableIRQ(GPIO_ODD_IRQn);
 
     // USB Interrupt
-	NVIC_DisableIRQ(USB_IRQn);
-	NVIC_ClearPendingIRQ(USB_IRQn);
 	NVIC_SetPriority(USB_IRQn, 6);
-	NVIC_EnableIRQ(USB_IRQn);
 }
 
 /**

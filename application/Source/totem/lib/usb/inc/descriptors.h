@@ -24,10 +24,6 @@ extern "C" {
 
 #define USB_PACKET_SIZE			37
 
-#define TOTEM_VERSION_RELEASE 0	//TODO REMOVE FROM HERE
-#define TOTEM_VERSION_BUILD 0	//TODO REMOVE FROM HERE
-#define TOTEM_VERSION_PATCH 1	//TODO REMOVE FROM HERE
-
 extern const char ReportDescriptor[34];
 
 extern const void * USBDESC_HidDescriptor;
