@@ -14,7 +14,7 @@
  ******************************************************************************/
 #include "descriptors.h"
 
-#include "totem_version.h"
+#include "version.h"
 
 // From Book "USB Complete"
 SL_ALIGN(4)const char ReportDescriptor[34] __attribute__ ((aligned(4))) = {

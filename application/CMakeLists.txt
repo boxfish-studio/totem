@@ -19,7 +19,7 @@ include(.cmake/definitions.cmake)
 set(DEPENDENCIES
           CMSIS
           Device
-          pinmap
+          pcbVersion
           emlib
           usb
           usbLib

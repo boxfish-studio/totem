@@ -1,6 +1,6 @@
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/Release")
-add_library(pinmap INTERFACE)
-target_include_directories(pinmap INTERFACE .)
+add_library(pcbVersion INTERFACE)
+target_include_directories(pcbVersion INTERFACE .)
 add_subdirectory(FreeRTOS)
 add_subdirectory(lib/_stdio)
 add_subdirectory(lib/usb)
