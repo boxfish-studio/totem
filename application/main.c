@@ -46,8 +46,7 @@ int main(void) {
 
 	// Communications service
 	service_usb_xmodem_setup(USB_XMODEM_SERVICE_NAME, TASK_PRIORITY_HIGH);
-	service_usb_data_handler_setup(USB_DATA_HANDLER_SERVICE_NAME,
-	TASK_PRIORITY_LOW);
+	service_usb_data_handler_setup(USB_DATA_HANDLER_SERVICE_NAME, TASK_PRIORITY_LOW);
 
 	// Watchdog service
 	service_watchdog_setup(WATCHDOG_SERVICE_NAME, TASK_PRIORITY_HIGH);

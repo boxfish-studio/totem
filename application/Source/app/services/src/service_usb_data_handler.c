@@ -36,7 +36,7 @@ void service_usb_data_handler(void *args) {
 	while (1) {
 		// Wait for data to come in from usb_xmodem
 		xQueueReceive(q_xmodem_stack_out, &in_data, portMAX_DELAY);
-		PRINT("-------------------- Service USB data handler running -----------------------------\n");
+		PRINT(">> Service USB data handler running \n");
 
 		// Check whether data is meant for this task
 		if (in_data.type != XMODEM_RCV)
