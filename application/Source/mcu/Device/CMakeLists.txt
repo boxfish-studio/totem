@@ -1,0 +1,5 @@
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/Release")
+file(GLOB source "EFM32GG/Source/*.c")
+add_library(Device STATIC ${source} EFM32GG/Source/GCC/startup_efm32gg.S)
+target_include_directories(Device PUBLIC EFM32GG/Include)
+target_link_libraries(Device CMSIS)

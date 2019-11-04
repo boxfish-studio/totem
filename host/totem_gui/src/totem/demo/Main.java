@@ -11,7 +11,7 @@ public class Main {
 		totem.get_eol_shield().get_tx().set(1, 1);
 
 		while (true) {
-			totem.get_eol_shield().print();
+			//totem.get_eol_shield().print();
 			Thread.sleep(1000);
 		}
 	}
