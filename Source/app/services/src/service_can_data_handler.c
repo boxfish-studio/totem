@@ -30,24 +30,34 @@ void service_can_data_handler(void *args) {
 			.sidh = (uint8_t) (0x666 >> 3),
 			.sidl = (uint8_t) (0x666 << 5),
 			.dlc = 8,
-			.D0 = 'T',
-			.D1 = 'o',
-			.D2 = 't',
-			.D3 = 'e',
-			.D4 = 's',
-			.D5 = 't',
-			.D6 = 'e',
-			.D7 = 'm',
+			.D0 = 0,
+			.D1 = 0,
+			.D2 = 0,
+			.D3 = 0,
+			.D4 = 0,
+			.D5 = 0,
+			.D6 = 0,
+			.D7 = 0,
 	}};
 
     portTickType xLastWakeTime = xTaskGetTickCount();
     vTaskDelayUntil(&xLastWakeTime, 1000 / portTICK_RATE_MS);
 
+    unsigned long long timer = 0;
 	for (;;) {
 
-		/*mcp2515_send(&frame);
+		timer++;
+
+		frame.s.D0 = (char) (timer & 0xFF);
+		frame.s.D1 = (char) ((timer >> 8) & 0xFF);
+		frame.s.D2 = (char) ((timer >> 16) & 0xFF);
+		frame.s.D3 = (char) ((timer >> 24) & 0xFF);
+		frame.s.D4 = (char) ((timer >> 32) & 0xFF);
+		frame.s.D5 = (char) ((timer >> 40) & 0xFF);
+		frame.s.D6 = (char) ((timer >> 48) & 0xFF);
+		frame.s.D7 = (char) ((timer >> 56) & 0xFF);
+
 		mcp2515_send(&frame);
-		mcp2515_send(&frame);*/
 
         vTaskDelay(1000 / portTICK_RATE_MS);
 
