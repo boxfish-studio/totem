@@ -44,7 +44,7 @@ public class TotemCAN implements Runnable {
 
 	public class Defs {
 
-		public static final int SERVO_MSG_PERIOD_MS = 1000;
+		public static final int SERVO_MSG_PERIOD_MS = 2;
 
 		public static final int BASE_ADDRESS = 0x150;
 		public static final int BASE_COMMAND_SIZE = 1;

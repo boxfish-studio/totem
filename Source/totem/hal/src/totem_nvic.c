@@ -35,6 +35,8 @@ void init_interrupts() {
 	NVIC_SetPriority(USB_IRQn, 6);
 	NVIC_EnableIRQ(USB_IRQn);
 
+	NVIC_SetPriority(DMA_IRQn, 6);
+
 	for (i = 0; i < EXTI_MAX; i++)
 		gpio_callbacks[i] = NULL;
 }

@@ -45,18 +45,18 @@ void service_can_data_handler(void *args) {
 
 	for (;;) {
 
+		/*mcp2515_send(&frame);
 		mcp2515_send(&frame);
-		mcp2515_send(&frame);
-		mcp2515_send(&frame);
+		mcp2515_send(&frame);*/
 
         vTaskDelay(1000 / portTICK_RATE_MS);
 
-        if (!mcp2515_sleepMode(1))
+        /*if (!mcp2515_sleepMode(1))
         	PRINT("Sleep error");
 
         vTaskDelay(10000 / portTICK_RATE_MS);
 
-        mcp2515_sleepMode(0);
+        mcp2515_sleepMode(0);*/
 
 		PRINT_STACKTRACE(stackTrace);
 	}
