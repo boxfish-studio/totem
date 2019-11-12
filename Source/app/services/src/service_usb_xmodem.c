@@ -19,8 +19,8 @@ typedef struct {
 
 /*********************** Variable definitions **********************************************/
 /* Semaphores */
-extern xSemaphoreHandle sem_usb_transfer_done;
-extern xSemaphoreHandle sem_xmodem_data_ready;
+extern xSemaphoreHandle sem_usb;
+extern xSemaphoreHandle sem_xmodem;
 /* Queues */
 extern xQueueHandle q_xmodem_stack_in;
 extern xQueueHandle q_xmodem_stack_out;
@@ -78,7 +78,7 @@ void service_usb_xmodem(void *args) {
 		/**************************** Queue Handling *******************************/
 		if (current_task_mode == IDLE) {
 			// Wait for semaphore to activate Task
-			xSemaphoreTake(sem_xmodem_data_ready, portMAX_DELAY);
+			xSemaphoreTake(sem_xmodem, portMAX_DELAY);
 
 			/* Check which queue has data in order to select the right mode */
 			if (xQueuePeek(q_xmodem_stack_in, &peek_in_data,
@@ -439,8 +439,7 @@ static bool usb_send(uint8_t data[], int len) {
 		USBD_Write(0x81, (void*) data, XMODEM_PACKET_SIZE, transmitCallback);
 		xTaskResumeAll();
 		// Wait for completion of transmission
-		if (xSemaphoreTake(sem_usb_transfer_done,
-				100 / portTICK_RATE_MS) != pdPASS) {
+		if (xSemaphoreTake(sem_usb, 100 / portTICK_RATE_MS) != pdPASS) {
 			PRINT ("usb_send(): ERROR!: Sending data failed!\n");
 			return false;
 		}
@@ -509,8 +508,7 @@ static void receiveCallback(uint8_t **report, uint8_t remaining) {
 
 		/* Send received data to queue */
 		xQueueSendFromISR(q_usb_in, &usbData, &xHigherPriorityTaskWoken);
-		xSemaphoreGiveFromISR(sem_xmodem_data_ready,
-				&xHigherPriorityTaskWoken);
+		xSemaphoreGiveFromISR(sem_xmodem, &xHigherPriorityTaskWoken);
 	}
 
 	portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
@@ -521,8 +519,7 @@ static int transmitCallback(USB_Status_TypeDef status, uint32_t xferred,
 	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 
 	if (remaining == 0) {
-		xSemaphoreGiveFromISR(sem_usb_transfer_done,
-				&xHigherPriorityTaskWoken);
+		xSemaphoreGiveFromISR(sem_usb, &xHigherPriorityTaskWoken);
 	}
 
 	portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);

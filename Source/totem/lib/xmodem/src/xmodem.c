@@ -11,7 +11,7 @@
 extern xQueueHandle q_xmodem_stack_in;
 
 // Semaphores
-extern xSemaphoreHandle sem_xmodem_data_ready;
+extern xSemaphoreHandle sem_xmodem;
 
 bool xmodem_send_data(xmodem_message_sender_t msg_type, uint8_t subcommand,
 		uint8_t data[], int len) {
@@ -32,7 +32,7 @@ bool xmodem_send_data(xmodem_message_sender_t msg_type, uint8_t subcommand,
 
 	// Send package into queue to be handled by queue_xmodem_communicator_in
 	xQueueSend(q_xmodem_stack_in, &send_data, portMAX_DELAY);
-	xSemaphoreGive(sem_xmodem_data_ready);
+	xSemaphoreGive(sem_xmodem);
 
 	return true;
 }

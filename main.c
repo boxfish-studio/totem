@@ -13,12 +13,12 @@
 #include <service_led.h>
 #include <service_usb_xmodem.h>
 #include <service_usb_data_handler.h>
-#include "service_can_controller.h"
-#include "service_can_data_handler.h"
+#include <service_can_controller.h>
+#include <service_can_data_handler.h>
 
 // Semaphores
-xSemaphoreHandle sem_usb_transfer_done;
-xSemaphoreHandle sem_xmodem_data_ready;
+xSemaphoreHandle sem_usb;
+xSemaphoreHandle sem_xmodem;
 xSemaphoreHandle sem_can;
 
 // Queues
@@ -32,10 +32,10 @@ int main(void) {
 	totem_init();
 
 	// Semaphores initialization
-	vSemaphoreCreateBinary(sem_usb_transfer_done);
-	vTraceSetSemaphoreName(sem_usb_transfer_done, "sem_usb_transfer_done");
-	vSemaphoreCreateBinary(sem_xmodem_data_ready);
-	vTraceSetSemaphoreName(sem_xmodem_data_ready, "sem_xmodem_ready");
+	vSemaphoreCreateBinary(sem_usb);
+	vTraceSetSemaphoreName(sem_usb, "sem_usb");
+	vSemaphoreCreateBinary(sem_xmodem);
+	vTraceSetSemaphoreName(sem_xmodem, "sem_xmodem");
 	vSemaphoreCreateBinary(sem_can);
 	vTraceSetSemaphoreName(sem_can, "sem_can");
 
@@ -56,10 +56,9 @@ int main(void) {
 	service_can_data_handler_setup(CAN_DATA_HANDLER_SERVICE_NAME, TASK_PRIORITY_MEDIUM);
 	service_can_controller_setup(CAN_CONTROLLER_SERVICE_NAME, TASK_PRIORITY_MEDIUM);
 
-	// Communications service
+	// USB services
 	service_usb_xmodem_setup(USB_XMODEM_SERVICE_NAME, TASK_PRIORITY_HIGH);
-	service_usb_data_handler_setup(USB_DATA_HANDLER_SERVICE_NAME,
-	TASK_PRIORITY_LOW);
+	service_usb_data_handler_setup(USB_DATA_HANDLER_SERVICE_NAME, TASK_PRIORITY_LOW);
 
 	// Watchdog service
 	service_watchdog_setup(WATCHDOG_SERVICE_NAME, TASK_PRIORITY_HIGH);

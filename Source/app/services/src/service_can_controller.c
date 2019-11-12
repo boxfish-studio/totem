@@ -46,7 +46,7 @@ void service_can_controller(void *args) {
 		PRINT("[CAN] NOT initialized\n");
 	}
 
-	PRINT("[CAN] successfull initialized\n");
+	PRINT("[CAN] Initialized\n");
 
 	for (;;) {
 
@@ -59,7 +59,7 @@ void service_can_controller(void *args) {
 			// Wait for data received by /INT signal from MCP2515
 			mcp2515_readBufferFromInterrupt(&rxcan);
 			fill_param_struct();
-			PRINT("Message received through CAN\n");
+			PRINT("[CAN] Message received\n");
 		}
 
 		// Send
@@ -69,7 +69,7 @@ void service_can_controller(void *args) {
 			if (errorstate != CAN_BUS_OFF) {
 				mcp2515_send(txcan);
 			} else {
-				PRINT("[CAN ERROR] CAN in bus error: ");
+				PRINT("[CAN] Bus error: ");
 				switch (errorstate) {
 				case CAN_ERROR_PASSIVE:
 					PRINT("CAN_ERROR_PASSIVE\n");
@@ -83,7 +83,7 @@ void service_can_controller(void *args) {
 				}
 			}
 
-			PRINT("Message sent through CAN\n");
+			PRINT("[CAN] Message sent\n");
 		}
 
 		PRINT_STACKTRACE(stackTrace);

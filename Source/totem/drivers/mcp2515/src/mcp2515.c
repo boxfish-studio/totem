@@ -110,12 +110,8 @@ uint8_t mcp2515_reset()
 
     if ((rxstat[2] & 0xE0) != (MCP2515_CTRL_REQOP_CONFIG << MCP2515_CTRL_REQOP_SHIFT))
     {
-        PRINT("Device reset failed\n");
+        PRINT("[MCP2515] Device reset failed\n");
         return 0;
-    }
-    else
-    {
-        PRINT("Config mode entered\n");
     }
 
     return 1;
