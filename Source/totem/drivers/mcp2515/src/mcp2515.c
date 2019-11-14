@@ -9,22 +9,35 @@
 
 #include <stdbool.h>
 #include <string.h>
+
+// HAL
 #include "totem_nvic.h"
 #include "totem_spi_dma.h"
 
+// FreeRTOS
 #include "FreeRTOS.h"
+#include "semphr.h"
 #include "queue.h"
-#include "pinmap.h"
-
 #include "trace.h"
 
+// pcbVersion
+#include "pinmap.h"
+
 #define MAX_TIMEOUT	25	// Max 255
+#define MAX_SPI_TRANSFER	15
 
 /***   Global variables   ***/
 extern xQueueHandle q_can_handle;
 
 /***   Local variables   ***/
 static const uint8_t full = MCP2515_STATUS_TX2RTS | MCP2515_STATUS_TX1RTS | MCP2515_STATUS_TX0RTS;
+
+static SPI_DMA_Handler_t hspi_dma;
+static uint8_t txBuffer[MAX_SPI_TRANSFER];
+static uint8_t rxBuffer[MAX_SPI_TRANSFER];
+static xSemaphoreHandle sem_spi_sending;
+static xSemaphoreHandle sem_spi_receiving;
+
 static traceString behaviourTrace;
 
 /***   Local functions   ***/
@@ -36,6 +49,8 @@ static uint8_t mcp2515_sendbuffer(uint8_t buffer, uint8_t priority);
 static uint8_t setupClock(enum eCANBaudrate baudrate);
 static void setupFilter(enum eCANAddressing address, uint32_t filter);
 static void mcp2515_sleepAwaken();
+static void spi_dma_TxCallback(unsigned int channel, bool primary, void *user);
+static void spi_dma_RxCallback(unsigned int channel, bool primary, void *user);
 
 #define BIT_SET(address, bits)		mcp2515_bitModify(address, bits, 0xFF)
 #define BIT_CLEAR(address, bits)	mcp2515_bitModify(address, bits, 0x00)
@@ -47,8 +62,35 @@ static void mcp2515_sleepAwaken();
  */
 uint8_t mcp2515_init(enum eCANBaudrate baud)
 {
+	hspi_dma.spi_wires.usart = USART2;
+	hspi_dma.spi_wires.MOSI_Port = PORT_CAN_MOSI;
+	hspi_dma.spi_wires.MOSI_Pin = PIN_CAN_MOSI;
+	hspi_dma.spi_wires.MISO_Port = PORT_CAN_MISO;
+	hspi_dma.spi_wires.MISO_Pin = PIN_CAN_MISO;
+	hspi_dma.spi_wires.CLK_Port = PORT_CAN_CLK;
+	hspi_dma.spi_wires.CLK_Pin = PIN_CAN_CLK;
+	hspi_dma.spi_wires.CS_Port = PORT_CAN_CS;
+	hspi_dma.spi_wires.CS_Pin = PIN_CAN_CS;
 
-    spi_dma_setup();
+	hspi_dma.baudrate = 2000000;
+	hspi_dma.dma_tx_channel = CAN_DMA_TX_CHANNEL;
+	hspi_dma.dma_tx_cb.cbFunc = spi_dma_TxCallback;
+	hspi_dma.dma_tx_cb.userPtr = NULL;
+	hspi_dma.dma_rx_channel = CAN_DMA_RX_CHANNEL;
+	hspi_dma.dma_rx_cb.cbFunc = spi_dma_RxCallback;
+	hspi_dma.dma_rx_cb.userPtr = NULL;
+
+	hspi_dma.txBuffer = txBuffer;
+	hspi_dma.rxBuffer = rxBuffer;
+
+    spi_dma_setup(&hspi_dma);
+
+    if (sem_spi_sending == NULL)
+    	vSemaphoreCreateBinary(sem_spi_sending);
+    if (sem_spi_receiving == NULL) {
+    	vSemaphoreCreateBinary(sem_spi_receiving);
+    	xSemaphoreTake(sem_spi_receiving, portMAX_DELAY);
+    }
 
     if (!mcp2515_reset())
     	return 0;
@@ -91,13 +133,13 @@ uint8_t mcp2515_init(enum eCANBaudrate baud)
  */
 uint8_t mcp2515_reset()
 {
-    uint8_t txcnf[5];
-    uint8_t rxstat[10];
+    uint8_t txcnf[3];
 
     /* reset device and make sure it is in config mode */
     txcnf[0] = MCP2515_SPI_RESET;
 
-    spi_dma_transfer(txcnf, NULL, 1);
+    xSemaphoreTake(sem_spi_sending, portMAX_DELAY);
+    spi_dma_transfer(&hspi_dma, txcnf, 1);
 
     vTaskDelay(1 / portTICK_RATE_MS); /* Must wait until the device is resetted */
 
@@ -105,15 +147,16 @@ uint8_t mcp2515_reset()
     txcnf[1] = MCP2515_CANSTAT;
     txcnf[2] = 0;
 
-    spi_dma_transfer(txcnf, rxstat, 3);
-    spi_dma_waitRX();
+    xSemaphoreTake(sem_spi_sending, portMAX_DELAY);
+    spi_dma_receive(&hspi_dma, 3);
+    spi_dma_transfer(&hspi_dma, txcnf, 3);
+    xSemaphoreTake(sem_spi_receiving, portMAX_DELAY);
 
-    if ((rxstat[2] & 0xE0) != (MCP2515_CTRL_REQOP_CONFIG << MCP2515_CTRL_REQOP_SHIFT))
+    if ((hspi_dma.rxBuffer[2] & 0xE0) != (MCP2515_CTRL_REQOP_CONFIG << MCP2515_CTRL_REQOP_SHIFT))
     {
         PRINT("[MCP2515] Device reset failed\n");
         return 0;
     }
-
     return 1;
 }
 
@@ -153,18 +196,24 @@ void mcp2515_readBufferFromInterrupt(CAN_Frame_t *frame)
  */
 uint8_t mcp2515_readBuffer(uint8_t rxbufno, CAN_Frame_t *frame)
 {
-	uint8_t txbuf[15], rxbuf[15];
+	uint8_t txbuf[14];
 
 	char rxbufstart = MCP2515_SPI_READ_RX_BUFFER;
+
+	if (rxbufno > 1 || frame == NULL)
+		return 0;
+
 	// First buffer 0, second buffer 1
-    rxbufstart |= (rxbufno == 0) ? 0b000 : 0b100; // Check Figure 12-3 from MCP2515 datasheet
+    rxbufstart |= (rxbufno << 2); // Check Figure 12-3 from MCP2515 datasheet
 
     txbuf[0] = rxbufstart;
 
-    spi_dma_transfer(txbuf, rxbuf, 14);
-    spi_dma_waitRX();
+    xSemaphoreTake(sem_spi_sending, portMAX_DELAY);
+    spi_dma_receive(&hspi_dma, 14);
+    spi_dma_transfer(&hspi_dma, txbuf, 14);
+    xSemaphoreTake(sem_spi_receiving, portMAX_DELAY);
 
-    memmove(frame->f, rxbuf + 1, 13);
+    memmove(frame->f, hspi_dma.rxBuffer + 1, 13);
 
     return 1;
 }
@@ -178,6 +227,9 @@ uint8_t mcp2515_send(CAN_Frame_t *frame)
 {
 	static uint8_t priority = 3;
 	uint8_t status, insert, timeout_cnt = 0;
+
+	if (frame == NULL)
+		return 0;
 
 	status = 0xFF;
 
@@ -285,12 +337,14 @@ uint8_t mcp2515_txcanbuf(uint8_t txbufno, CAN_Frame_t *frame)
 {
     uint8_t txbuf[14];
 
-    if (txbufno > 2)
+    if (txbufno > 2 || frame == NULL)
     	return 0;
 
     txbuf[0] = MCP2515_SPI_LOAD_TX_BUFFER | ((1 << txbufno) & 0x06); // 0x06 mask to protect overflow and take count of buffer 0
     memmove(txbuf + 1, frame->f, 13);
-    spi_dma_transfer(txbuf, NULL, 14);
+
+    xSemaphoreTake(sem_spi_sending, portMAX_DELAY);
+    spi_dma_transfer(&hspi_dma, txbuf, 14);
 
     return 1;
 }
@@ -337,18 +391,18 @@ void mcp2515_irq_handler(void)
  */
 static uint8_t mcp2515_read(char address)
 {
-    uint8_t txbuf[3], rxbuf[3], data;
+    uint8_t txbuf[3];
 
     txbuf[0] = MCP2515_SPI_READ;
     txbuf[1] = address;
     txbuf[2] = 0;
 
-    spi_dma_transfer(txbuf, rxbuf, 3);
-    spi_dma_waitRX();
+    xSemaphoreTake(sem_spi_sending, portMAX_DELAY);
+    spi_dma_receive(&hspi_dma, 3);
+    spi_dma_transfer(&hspi_dma, txbuf, 3);
+    xSemaphoreTake(sem_spi_receiving, portMAX_DELAY);
 
-    data = rxbuf[2];
-
-    return data;
+    return hspi_dma.rxBuffer[2];
 }
 
 /**
@@ -358,16 +412,21 @@ static uint8_t mcp2515_read(char address)
  */
 static uint8_t mcp2515_readStatus(uint8_t *status)
 {
-    uint8_t txbuf[3], rxbuf[3];
+    uint8_t txbuf[3];
+
+    if (status == NULL)
+    	return 0;
 
     txbuf[0] = MCP2515_SPI_READ_STATUS;
     txbuf[1] = 0;
     txbuf[2] = 0;
 
-    spi_dma_transfer(txbuf, rxbuf, 3);
-    spi_dma_waitRX();
+    xSemaphoreTake(sem_spi_sending, portMAX_DELAY);
+    spi_dma_receive(&hspi_dma, 3);
+    spi_dma_transfer(&hspi_dma, txbuf, 3);
+    xSemaphoreTake(sem_spi_receiving, portMAX_DELAY);
 
-    *status = rxbuf[2];
+    *status = hspi_dma.rxBuffer[2];
 
     return 1;
 }
@@ -388,7 +447,8 @@ static uint8_t mcp2515_bitModify(uint8_t address, uint8_t mask, uint8_t data)
     txbuf[2] = mask;
     txbuf[3] = data;
 
-    spi_dma_transfer(txbuf, NULL, 4);
+    xSemaphoreTake(sem_spi_sending, portMAX_DELAY);
+    spi_dma_transfer(&hspi_dma, txbuf, 4);
 
     return 1;
 }
@@ -407,7 +467,8 @@ static uint8_t mcp2515_write(uint8_t address, uint8_t data)
     txbuf[1] = address;
     txbuf[2] = data;
 
-    spi_dma_transfer(txbuf, NULL, 3);
+    xSemaphoreTake(sem_spi_sending, portMAX_DELAY);
+    spi_dma_transfer(&hspi_dma, txbuf, 3);
 
     return 1;
 }
@@ -429,7 +490,8 @@ static uint8_t mcp2515_sendbuffer(uint8_t txbufno, uint8_t priority)
     txbuf[1] = (((MCP2515_TXB0CTRL >> 4) + txbufno) << 4);
     txbuf[2] = (MCP2515_TXCTRL_RTS | (priority & 0x3));
 
-    spi_dma_transfer(txbuf, NULL, 3);
+    xSemaphoreTake(sem_spi_sending, portMAX_DELAY);
+    spi_dma_transfer(&hspi_dma, txbuf, 3);
 
     return 1;
 }
@@ -545,4 +607,22 @@ static void mcp2515_sleepAwaken()
 	PRINT_DRIVERTRACE(behaviourTrace, "Wake up", NULL);
 	PRINT("Wake up\n");
 	set_gpio_callback(PORT_CAN_INT, PIN_CAN_INT, mcp2515_irq_handler, false, true);
+}
+
+static void spi_dma_TxCallback(unsigned int channel, bool primary, void *user)
+{
+    portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+
+    xSemaphoreGiveFromISR(sem_spi_sending, &xHigherPriorityTaskWoken);
+
+    portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
+}
+
+static void spi_dma_RxCallback(unsigned int channel, bool primary, void *user)
+{
+    portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+
+	xSemaphoreGiveFromISR(sem_spi_receiving, &xHigherPriorityTaskWoken);
+
+    portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
 }

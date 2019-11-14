@@ -34,4 +34,8 @@
 #define PORT_CAN_INT	gpioPortC
 #define PIN_CAN_INT		6
 
+// CAN DMA config
+#define CAN_DMA_TX_CHANNEL	0
+#define CAN_DMA_RX_CHANNEL	1
+
 #endif /* PINMAP_H_ */
