@@ -55,13 +55,17 @@ static void spi_dma_RxCallback(unsigned int channel, bool primary, void *user);
 #define BIT_SET(address, bits)		mcp2515_bitModify(address, bits, 0xFF)
 #define BIT_CLEAR(address, bits)	mcp2515_bitModify(address, bits, 0x00)
 
-/**
+#define START_SENDING_SPI	xSemaphoreTake(sem_spi_sending, portMAX_DELAY)
+#define WAIT_RECEIVE_DATA	xSemaphoreTake(sem_spi_receiving, portMAX_DELAY)
+
+/**************************************************************************//**
  * @brief 	Initialize MCP2515 CAN device
  * @param 	baud    Baudrate for the CAN transmission
  * @return	1 if successful, 0 otherwise
- */
+ *****************************************************************************/
 uint8_t mcp2515_init(enum eCANBaudrate baud)
 {
+	/* SPI using DMA configuration */
 	hspi_dma.spi_wires.usart = USART2;
 	hspi_dma.spi_wires.MOSI_Port = PORT_CAN_MOSI;
 	hspi_dma.spi_wires.MOSI_Pin = PIN_CAN_MOSI;
@@ -85,6 +89,7 @@ uint8_t mcp2515_init(enum eCANBaudrate baud)
 
     spi_dma_setup(&hspi_dma);
 
+    /* Create semaphores to manage the transmission and reception */
     if (sem_spi_sending == NULL)
     	vSemaphoreCreateBinary(sem_spi_sending);
     if (sem_spi_receiving == NULL) {
@@ -92,53 +97,55 @@ uint8_t mcp2515_init(enum eCANBaudrate baud)
     	xSemaphoreTake(sem_spi_receiving, portMAX_DELAY);
     }
 
+    /* Reset the MCP2515 */
     if (!mcp2515_reset())
     	return 0;
 
-    /* set clock configuration */
+    /* Set clock configuration */
     if (!setupClock(baud))
     	return 0;
 
-    /* configure mask and filters for the rx frames */
+    /* Configure mask and filters for the RX frames */
     setupFilter(STANDARD_ADDRESSING, 0);
 
-    /* set receive configuration */
+    /* Set receive configuration */
     if (!mcp2515_write(MCP2515_RXB0CTRL, ((MCP2515_RXCTRL_BUF_FILTERS_OFF << MCP2515_RXCTRL_BUF_SHIFT) | MCP2515_RX0CTRL_BUKT)))
     	return 0;
 
-    /* config /INT as interrupt notification for all RX buffer */
+    /* Config /INT as interrupt notification for all RX buffer */
     if (!BIT_SET(MCP2515_CANINTE, (MCP2515_INT_WAKIE | MCP2515_INT_RX1IE | MCP2515_INT_RX0IE)))
     	return 0;
 
-    /* reset all interrupts */
+    /* Reset all interrupts */
     if (!mcp2515_write(MCP2515_CANINTF, 0))
     	return 0;
 
-    /* setup interrupt handling for /INT pin */
+    /* Setup interrupt handling for /INT pin */
     set_gpio_callback(PORT_CAN_INT, PIN_CAN_INT, mcp2515_irq_handler, false, true);
 
-    /* set and check opmode */
+    /* Set opmode */
     if (!mcp2515_write(MCP2515_CANCTRL, (MCP2515_CTRL_REQOP_NORMAL << MCP2515_CTRL_REQOP_SHIFT)))
     	return 0;
 
+    /* Init the Tracealyzer tracking */
     behaviourTrace = INIT_DRIVERTRACE("MCP2515");
 
     return 1;
 }
 
-/**
- * @brief 	Reset MCP device. After the reset the MCP2515 should
- * 			be in configuration mode.
+/**************************************************************************//**
+ * @brief 	Reset MCP device. After the reset the MCP2515 should be in
+ * 			configuration mode.
  * @return 	1 if successful, 0 otherwise
- */
+ *****************************************************************************/
 uint8_t mcp2515_reset()
 {
     uint8_t txcnf[3];
 
-    /* reset device and make sure it is in config mode */
+    /* Reset device and make sure it is in config mode */
     txcnf[0] = MCP2515_SPI_RESET;
 
-    xSemaphoreTake(sem_spi_sending, portMAX_DELAY);
+    START_SENDING_SPI;
     spi_dma_transfer(&hspi_dma, txcnf, 1);
 
     vTaskDelay(1 / portTICK_RATE_MS); /* Must wait until the device is resetted */
@@ -147,10 +154,10 @@ uint8_t mcp2515_reset()
     txcnf[1] = MCP2515_CANSTAT;
     txcnf[2] = 0;
 
-    xSemaphoreTake(sem_spi_sending, portMAX_DELAY);
+    START_SENDING_SPI;
     spi_dma_receive(&hspi_dma, 3);
     spi_dma_transfer(&hspi_dma, txcnf, 3);
-    xSemaphoreTake(sem_spi_receiving, portMAX_DELAY);
+    WAIT_RECEIVE_DATA;
 
     if ((hspi_dma.rxBuffer[2] & 0xE0) != (MCP2515_CTRL_REQOP_CONFIG << MCP2515_CTRL_REQOP_SHIFT))
     {
@@ -160,11 +167,11 @@ uint8_t mcp2515_reset()
     return 1;
 }
 
-/**
+/**************************************************************************//**
  * @brief 	MCP2515 interruption register handler. The function checks which
  * 			flag of the interruption register is set and cleans all.
  * @param 	frame	Pointer to structure where save the frame data from RX buffer
- */
+ *****************************************************************************/
 void mcp2515_readBufferFromInterrupt(CAN_Frame_t *frame)
 {
     uint8_t interrupts = mcp2515_read(MCP2515_CANINTF);
@@ -189,11 +196,11 @@ void mcp2515_readBufferFromInterrupt(CAN_Frame_t *frame)
     mcp2515_write(MCP2515_CANINTF, interrupts);
 }
 
-/**
+/**************************************************************************//**
  * @brief 	Read a buffer of 2 available from MCP2515 device
  * @param	rxbufno	Number of the buffer to receive the data from
  * @param 	frame	Pointer to structure where save the frame data from RX buffer
- */
+ *****************************************************************************/
 uint8_t mcp2515_readBuffer(uint8_t rxbufno, CAN_Frame_t *frame)
 {
 	uint8_t txbuf[14];
@@ -208,21 +215,21 @@ uint8_t mcp2515_readBuffer(uint8_t rxbufno, CAN_Frame_t *frame)
 
     txbuf[0] = rxbufstart;
 
-    xSemaphoreTake(sem_spi_sending, portMAX_DELAY);
+    START_SENDING_SPI;
     spi_dma_receive(&hspi_dma, 14);
     spi_dma_transfer(&hspi_dma, txbuf, 14);
-    xSemaphoreTake(sem_spi_receiving, portMAX_DELAY);
+    WAIT_RECEIVE_DATA;
 
     memmove(frame->f, hspi_dma.rxBuffer + 1, 13);
 
     return 1;
 }
 
-/**
+/**************************************************************************//**
  * @brief 	Send the CAN frame over the MCP2515
  * @param 	frame	Pointer to structure to send over CAN
  * @return	1 if successful, 0 otherwise
- */
+ *****************************************************************************/
 uint8_t mcp2515_send(CAN_Frame_t *frame)
 {
 	static uint8_t priority = 3;
@@ -290,11 +297,11 @@ uint8_t mcp2515_send(CAN_Frame_t *frame)
     return 1;
 }
 
-/**
+/**************************************************************************//**
  * @brief	Enters or exits to/from sleep mode the MCP2515
  * @param	sleep	1 if enters, 0 if exists
  * @return	1 if successful, 0 otherwise
- */
+ *****************************************************************************/
 uint8_t mcp2515_sleepMode(uint8_t sleep)
 {
 	uint8_t status, timeout = MAX_TIMEOUT;
@@ -327,12 +334,12 @@ uint8_t mcp2515_sleepMode(uint8_t sleep)
 
 }
 
-/**
+/**************************************************************************//**
  * @brief 	Send a frame to a MCP2515 TX buffer
  * @param	txbufno	Number of the buffer where save the frame
  * @param 	frame	Pointer to structure to send over CAN
  * @return	1 if successful, 0 otherwise
- */
+ *****************************************************************************/
 uint8_t mcp2515_txcanbuf(uint8_t txbufno, CAN_Frame_t *frame)
 {
     uint8_t txbuf[14];
@@ -343,18 +350,20 @@ uint8_t mcp2515_txcanbuf(uint8_t txbufno, CAN_Frame_t *frame)
     txbuf[0] = MCP2515_SPI_LOAD_TX_BUFFER | ((1 << txbufno) & 0x06); // 0x06 mask to protect overflow and take count of buffer 0
     memmove(txbuf + 1, frame->f, 13);
 
-    xSemaphoreTake(sem_spi_sending, portMAX_DELAY);
+    START_SENDING_SPI;
     spi_dma_transfer(&hspi_dma, txbuf, 14);
 
     return 1;
 }
 
-/**
+/**************************************************************************//**
  * @brief 	Get all the errors from the MCP2515
  * @param	errflags	Pointer to byte where save the error flag register
- * @param 	txerr		Pointer to byte where save the transmission error counter register
- * @param	rxerr		Pointer to byte where save the reception error counter register
- */
+ * @param 	txerr		Pointer to byte where save the transmission error
+ * 						counter register
+ * @param	rxerr		Pointer to byte where save the reception error
+ * 						counter register
+ *****************************************************************************/
 void mcp2515_get_errors(uint8_t *errflags, uint8_t *txerr, uint8_t *rxerr)
 {
     *errflags = mcp2515_read(MCP2515_EFLG);
@@ -362,9 +371,10 @@ void mcp2515_get_errors(uint8_t *errflags, uint8_t *txerr, uint8_t *rxerr)
     *rxerr    = mcp2515_read(MCP2515_REC);
 }
 
-/**
- * @brief 	Interrupt function handler. It sends a message to the queue to inform other tasks
- */
+/**************************************************************************//**
+ * @brief 	Interrupt function handler. It sends a message to the queue to
+ * 			inform other tasks
+ *****************************************************************************/
 void mcp2515_irq_handler(void)
 {
     signed portBASE_TYPE pxHigherPriorityTaskWoken = pdFALSE;
@@ -384,11 +394,11 @@ void mcp2515_irq_handler(void)
     portEND_SWITCHING_ISR(pxHigherPriorityTaskWoken);
 }
 
-/**
+/**************************************************************************//**
  * @brief 	Read a register from MCP2515
  * @param 	address	Register address
  * @return	1 if successful, 0 otherwise
- */
+ *****************************************************************************/
 static uint8_t mcp2515_read(char address)
 {
     uint8_t txbuf[3];
@@ -397,19 +407,19 @@ static uint8_t mcp2515_read(char address)
     txbuf[1] = address;
     txbuf[2] = 0;
 
-    xSemaphoreTake(sem_spi_sending, portMAX_DELAY);
+    START_SENDING_SPI;
     spi_dma_receive(&hspi_dma, 3);
     spi_dma_transfer(&hspi_dma, txbuf, 3);
-    xSemaphoreTake(sem_spi_receiving, portMAX_DELAY);
+    WAIT_RECEIVE_DATA;
 
     return hspi_dma.rxBuffer[2];
 }
 
-/**
+/**************************************************************************//**
  * @brief 	Read a register from MCP2515
- * @param 	status	Pointer to byte return by the read status spi command
+ * @param 	status	Pointer to byte return by the read status SPI command
  * @return	1 if successful, 0 otherwise
- */
+ *****************************************************************************/
 static uint8_t mcp2515_readStatus(uint8_t *status)
 {
     uint8_t txbuf[3];
@@ -421,23 +431,23 @@ static uint8_t mcp2515_readStatus(uint8_t *status)
     txbuf[1] = 0;
     txbuf[2] = 0;
 
-    xSemaphoreTake(sem_spi_sending, portMAX_DELAY);
+    START_SENDING_SPI;
     spi_dma_receive(&hspi_dma, 3);
     spi_dma_transfer(&hspi_dma, txbuf, 3);
-    xSemaphoreTake(sem_spi_receiving, portMAX_DELAY);
+    WAIT_RECEIVE_DATA;
 
     *status = hspi_dma.rxBuffer[2];
 
     return 1;
 }
 
-/**
+/**************************************************************************//**
  * @brief 	Modify bits from a register of MCP2515
  * @param 	address	Register to change of MCP2515
  * @param 	mask	Mask to apply between register and data
  * @param 	data	Data to write in the register
  * @return	1 if successful, 0 otherwise
- */
+ *****************************************************************************/
 static uint8_t mcp2515_bitModify(uint8_t address, uint8_t mask, uint8_t data)
 {
     uint8_t txbuf[4];
@@ -447,18 +457,18 @@ static uint8_t mcp2515_bitModify(uint8_t address, uint8_t mask, uint8_t data)
     txbuf[2] = mask;
     txbuf[3] = data;
 
-    xSemaphoreTake(sem_spi_sending, portMAX_DELAY);
+    START_SENDING_SPI;
     spi_dma_transfer(&hspi_dma, txbuf, 4);
 
     return 1;
 }
 
-/**
+/**************************************************************************//**
  * @brief 	Write a register of MCP2515
  * @param 	address	Register to write of MCP2515
  * @param 	data	Data to write in the register
  * @return	1 if successful, 0 otherwise
- */
+ *****************************************************************************/
 static uint8_t mcp2515_write(uint8_t address, uint8_t data)
 {
     uint8_t txbuf[3];
@@ -467,18 +477,18 @@ static uint8_t mcp2515_write(uint8_t address, uint8_t data)
     txbuf[1] = address;
     txbuf[2] = data;
 
-    xSemaphoreTake(sem_spi_sending, portMAX_DELAY);
+    START_SENDING_SPI;
     spi_dma_transfer(&hspi_dma, txbuf, 3);
 
     return 1;
 }
 
-/**
+/**************************************************************************//**
  * @brief 	Command the MCP2515 to send a TX buffer with a certain priority
  * @param 	txbufno		Number of the TX buffer to send over CAN
  * @param 	priority	Number of priority: 3 (highest) to 0 (lowest)
  * @return	1 if successful, 0 otherwise
- */
+ *****************************************************************************/
 static uint8_t mcp2515_sendbuffer(uint8_t txbufno, uint8_t priority)
 {
     uint8_t txbuf[3];
@@ -490,17 +500,17 @@ static uint8_t mcp2515_sendbuffer(uint8_t txbufno, uint8_t priority)
     txbuf[1] = (((MCP2515_TXB0CTRL >> 4) + txbufno) << 4);
     txbuf[2] = (MCP2515_TXCTRL_RTS | (priority & 0x3));
 
-    xSemaphoreTake(sem_spi_sending, portMAX_DELAY);
+    START_SENDING_SPI;
     spi_dma_transfer(&hspi_dma, txbuf, 3);
 
     return 1;
 }
 
-/**
+/**************************************************************************//**
  * @brief 	Setup clock from MCP2515 to CAN transmissions
  * @param 	baudrate	Baudrate used in the CAN transmissions
  * @return	1 if successful, 0 otherwise
- */
+ *****************************************************************************/
 static uint8_t setupClock(enum eCANBaudrate baudrate)
 {
     uint8_t clk_conf1, clk_conf2, clk_conf3;
@@ -553,11 +563,12 @@ static uint8_t setupClock(enum eCANBaudrate baudrate)
     return 1;
 }
 
-/**
- * @brief 	Setup of mask and filter registers for the RXnBUF in the MCP2515 device.
+/**************************************************************************//**
+ * @brief 	Setup of mask and filter registers for the RXnBUF in the MCP2515
+ * 			device.
  * @param 	address	Type of address used in CAN frames
  * @param 	filter	Filter to use in the RX data received
- */
+ *****************************************************************************/
 static void setupFilter(enum eCANAddressing address, uint32_t filter)
 {
     uint32_t mask = 0;
@@ -602,6 +613,9 @@ static void setupFilter(enum eCANAddressing address, uint32_t filter)
     }
 }
 
+/**************************************************************************//**
+ * @brief	Callback when the MCP2515 is awaken from sleep mode
+ *****************************************************************************/
 static void mcp2515_sleepAwaken()
 {
 	PRINT_DRIVERTRACE(behaviourTrace, "Wake up", NULL);
@@ -609,6 +623,13 @@ static void mcp2515_sleepAwaken()
 	set_gpio_callback(PORT_CAN_INT, PIN_CAN_INT, mcp2515_irq_handler, false, true);
 }
 
+/**************************************************************************//**
+ * @brief Callback function called when the DMA to transmit has completed.
+ *
+ * @param	channel	DMA channel number.
+ * @param	primary	True if this is the primary DMA channel.
+ * @param	user	Optional user supplied parameter.
+ *****************************************************************************/
 static void spi_dma_TxCallback(unsigned int channel, bool primary, void *user)
 {
     portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
@@ -618,6 +639,13 @@ static void spi_dma_TxCallback(unsigned int channel, bool primary, void *user)
     portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
 }
 
+/**************************************************************************//**
+ * @brief Callback function called when the DMA to receive has completed.
+ *
+ * @param	channel	DMA channel number.
+ * @param	primary	True if this is the primary DMA channel.
+ * @param	user	Optional user supplied parameter.
+ *****************************************************************************/
 static void spi_dma_RxCallback(unsigned int channel, bool primary, void *user)
 {
     portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;

@@ -20,28 +20,37 @@
 // DMA
 #include "dmactrl.h"
 
-/* Local prototypes */
+/*** Local prototypes ***/
 static void SPI_SerialPortInit(SPI_DMA_Handler_t *spi_dma);
 static void DMA_SPI_SerialPortInit(SPI_DMA_Handler_t *spi_dma);
 
-/**
- * @brief	Setup SPI as Master for DMA use
- */
+/**************************************************************************//**
+ * @brief	Setup SPI with USART as Master using DMA to transfer data to TX/RX
+ *
+ * @param	spi_dma	Pointer to the handler where is specified the peripheral
+ * 					characteristics to communications
+ *****************************************************************************/
 void spi_dma_setup(SPI_DMA_Handler_t *spi_dma)
 {
+	// SPI initialization
 	SPI_SerialPortInit(spi_dma);
+	// DMA initialization
     DMA_SPI_SerialPortInit(spi_dma);
 }
 
-/**
- * @brief	SPI communication using DMA. Combine with spi_dma_waitRX if the receive data is needed
- * 			immediately
- * @param	txBuffer	Data to transmit over SPI. It can be NULL to transmit dummy data
- * @param	rxBuffer	Pointer to memory where save the received data. It can be NULL to skip activation
- * @param	bytes		Number of bytes to transmit and receive (the total one)
- */
+/**************************************************************************//**
+ * @brief	SPI transfer using DMA. When the transfer is reached, the callback
+ * 			assign in the SPI_DMA_Handler is called
+ *
+ * @param	spi_dma		Pointer to the handler where is specified the peripheral
+ * @param	txBuffer	Data to transmit over SPI. It can be NULL to transmit
+ * 						dummy data
+ * @param	bytes		Number of bytes to transmit and receive (the total one,
+ * 						due to the CS)
+ *****************************************************************************/
 void spi_dma_transfer(SPI_DMA_Handler_t *spi_dma, uint8_t *txBuffer, uint8_t bytes)
 {
+	/* Global copy to transmit */
 	memmove(spi_dma->txBuffer, txBuffer, bytes);
 
     /* Clear TX registers */
@@ -51,6 +60,14 @@ void spi_dma_transfer(SPI_DMA_Handler_t *spi_dma, uint8_t *txBuffer, uint8_t byt
     DMA_ActivateBasic(spi_dma->dma_tx_channel, true, false, (void *)&(spi_dma->spi_wires.usart->TXDATA), spi_dma->txBuffer, bytes - 1);
 }
 
+/**************************************************************************//**
+ * @brief	SPI receive using DMA. When the transfer is reached, the callback
+ * 			assign in the SPI_DMA_Handler is called
+ *
+ * @param	spi_dma		Pointer to the handler where is specified the peripheral
+ * @param	bytes		Number of bytes to transmit and receive (the total one,
+ * 						due to the CS)
+ *****************************************************************************/
 void spi_dma_receive(SPI_DMA_Handler_t *spi_dma, uint8_t bytes)
 {
     /* Clear RX registers */
@@ -61,6 +78,12 @@ void spi_dma_receive(SPI_DMA_Handler_t *spi_dma, uint8_t bytes)
                       bytes - 1);
 }
 
+/**************************************************************************//**
+ * @brief	Initialize the UART peripheral
+ *
+ * @param	spi_dma		Pointer to the handler where is specified the
+ * 						peripheral
+ *****************************************************************************/
 static void SPI_SerialPortInit(SPI_DMA_Handler_t *spi_dma)
 {
 	USART_InitSync_TypeDef usart_init = USART_INITSYNC_DEFAULT;
@@ -98,15 +121,18 @@ static void SPI_SerialPortInit(SPI_DMA_Handler_t *spi_dma)
 
 	/* Enable routing for SPI pins from USART to location 0 */
 	spi_dma->spi_wires.usart->ROUTE = USART_ROUTE_TXPEN | USART_ROUTE_RXPEN | USART_ROUTE_CSPEN | USART_ROUTE_CLKPEN |
-					USART_ROUTE_LOCATION_LOC0;	// FIXME: If the gpio location is not Loc0, then the USART is not well configured
+					USART_ROUTE_LOCATION_LOC0;	// FIXME: If the GPIO location is not Loc0, then the USART is not well configured
 
 	/* Enable SPI */
 	USART_Enable(spi_dma->spi_wires.usart, usartEnable);
 }
 
-/**
- * @brief	Configure DMA in basic mode for TX/RX to/from USART
- */
+/**************************************************************************//**
+ * @brief Initialize the DMA peripheral.
+ *
+ * @param	spi_dma		Pointer to the handler where is specified the
+ * 						peripheral
+ *****************************************************************************/
 static void DMA_SPI_SerialPortInit(SPI_DMA_Handler_t *spi_dma)
 {
 
