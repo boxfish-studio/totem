@@ -29,6 +29,8 @@ void service_can_data_handler(void *args) {
 	CAN_Frame_t frame = { .s = {
 			.sidh = (uint8_t) (0x666 >> 3),
 			.sidl = (uint8_t) (0x666 << 5),
+			.eid8 = 0,
+			.eid0 = 0,
 			.dlc = 8,
 			.D0 = 0,
 			.D1 = 0,

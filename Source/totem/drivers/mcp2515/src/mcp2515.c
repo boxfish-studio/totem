@@ -283,7 +283,7 @@ uint8_t mcp2515_sleepMode(uint8_t sleep)
  */
 uint8_t mcp2515_txcanbuf(uint8_t txbufno, CAN_Frame_t *frame)
 {
-    uint8_t txbuf[15];
+    uint8_t txbuf[14];
 
     if (txbufno > 2)
     	return 0;

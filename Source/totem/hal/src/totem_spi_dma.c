@@ -7,6 +7,8 @@
 
 #include "totem_spi_dma.h"
 
+#include "totem_nvic.h"
+
 #include "em_usart.h"
 #include "em_dma.h"
 #include "em_gpio.h"
@@ -23,6 +25,8 @@
 #define DMA_CHANNEL_RX  1
 #define DMA_CHANNELS    2
 
+#define MAX_SPI_DATA_TRANSFER	15
+
 /* DMA Callback structure */
 DMA_CB_TypeDef spiCallback;
 
@@ -38,28 +42,18 @@ static xSemaphoreHandle sem_rx_wait;
 static void dma_setup();
 static void spi_dma_transferCallback(unsigned int channel, bool primary, void *user);
 
+static uint8_t dma_tx_buffer[MAX_SPI_DATA_TRANSFER];
+
 /**
  * @brief	Setup SPI as Master for DMA use
  */
 void spi_dma_setup()
 {
 	USART_InitSync_TypeDef usart_init = USART_INITSYNC_DEFAULT;
-    usart_init.msbf = true;
 
     /* Enable clocks */
     CMU_ClockEnable(cmuClock_DMA, true);
     CMU_ClockEnable(cmuClock_USART2, true);
-
-    /* Initialize SPI */
-    usart_init.databits = usartDatabits8;
-    usart_init.baudrate = 1000000; /* 1 MBit */
-    USART_InitSync(USART2, &usart_init);
-
-    /* Turn on automatic Chip Select control */
-    USART2->CTRL |= USART_CTRL_AUTOCS;
-
-    /* Enable SPI */
-    USART_Enable(USART2, usartEnable);
 
     /* Configure GPIO pins for SPI */
     GPIO_PinModeSet(PORT_CAN_MOSI, PIN_CAN_MOSI, gpioModePushPull, 0); /* MOSI */
@@ -67,9 +61,21 @@ void spi_dma_setup()
     GPIO_PinModeSet(PORT_CAN_CLK, PIN_CAN_CLK, gpioModePushPull, 0);   /* Clock */
     GPIO_PinModeSet(PORT_CAN_CS, PIN_CAN_CS, gpioModePushPull, 1);     /* CS */
 
+    /* Initialize SPI */
+    usart_init.databits = usartDatabits8;
+    usart_init.baudrate = 1000000; /* 1 MBit */
+    usart_init.msbf = true;
+    USART_InitSync(USART2, &usart_init);
+
+    /* Turn on automatic Chip Select control */
+    USART2->CTRL |= USART_CTRL_AUTOCS;
+
     /* Enable routing for SPI pins from USART to location 0 */
     USART2->ROUTE = USART_ROUTE_TXPEN | USART_ROUTE_RXPEN | USART_ROUTE_CSPEN | USART_ROUTE_CLKPEN |
                     USART_ROUTE_LOCATION_LOC0;
+
+    /* Enable SPI */
+    USART_Enable(USART2, usartEnable);
 
     /* Enable DMA */
     dma_setup();
@@ -92,7 +98,9 @@ void spi_dma_setup()
 void spi_dma_transfer(uint8_t *txBuffer, uint8_t *rxBuffer, int bytes)
 {
 	/* Wait until DMA is free */
-    xSemaphoreTake(sem_spi_dma, portMAX_DELAY);
+	xSemaphoreTake(sem_spi_dma, portMAX_DELAY);
+
+	memmove(dma_tx_buffer, txBuffer, bytes);
 
     /* Only activate RX DMA if a receive buffer is specified */
     if (rxBuffer != NULL)
@@ -122,7 +130,7 @@ void spi_dma_transfer(uint8_t *txBuffer, uint8_t *rxBuffer, int bytes)
     USART2->CMD = USART_CMD_CLEARTX;
 
     /* Activate TX channel */
-    DMA_ActivateBasic(DMA_CHANNEL_TX, true, false, (void *)&(USART2->TXDATA), txBuffer, bytes - 1);
+    DMA_ActivateBasic(DMA_CHANNEL_TX, true, false, (void *)&(USART2->TXDATA), dma_tx_buffer, bytes - 1);
 }
 
 /**
@@ -222,6 +230,7 @@ static void spi_dma_transferCallback(unsigned int channel, bool primary, void *u
     {
     	// End of use of DMA
         xSemaphoreGiveFromISR(sem_spi_dma, &xHigherPriorityTaskWoken);
-        portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
     }
+
+    portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
 }
