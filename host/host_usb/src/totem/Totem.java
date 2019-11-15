@@ -119,7 +119,7 @@ public class Totem extends Observable implements Runnable {
 		this.xmodem_bridge.stopThread();
 	}
 
-	public Data get_eol_shield() {
+	public Data get_data() {
 		return this.totem_data;
 	}
 

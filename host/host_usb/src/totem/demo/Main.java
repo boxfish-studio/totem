@@ -8,10 +8,9 @@ public class Main {
 
 		Totem totem = new Totem();
 		totem.getUsbHidModel().findDeviceAttached();
-		totem.get_eol_shield().get_tx().set(1, 1);
+		totem.get_data().get_tx().set(1, 1);
 
 		while (true) {
-			//totem.get_eol_shield().print();
 			Thread.sleep(1000);
 		}
 	}
