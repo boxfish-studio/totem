@@ -98,4 +98,3 @@ bool xmodem_send_slave_status_msg() {
 			send_data,
 			XMODEM_SLAVE_MSG_STATUS_DATA_SIZE);
 }
-

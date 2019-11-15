@@ -18,7 +18,6 @@ macro(ADAPT_ECLIPSE_PROJECT)
   execute_process(
     COMMAND bash ${ADAPT_ECLIPSE_SCRIPT} ${CMAKE_SOURCE_DIR}/.cproject
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMAND echo "\n\n-- Adapting Eclipse project to support cmake structure"
   )
 endmacro(ADAPT_ECLIPSE_PROJECT)
 

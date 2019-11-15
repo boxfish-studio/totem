@@ -21,12 +21,14 @@ set(DEPENDENCIES
           Device
           pcbVersion
           emlib
+          dma
           usb
           usbLib
           _stdio
           FreeRTOS
           xmodem
           hal
+          mcp2515_driver
           services)
 
 # File without bootloader
@@ -45,6 +47,7 @@ GENERATE_BIN(${NAME})
 # Output version information
 # ==============================================================================
 
+message("\n-- Adapting Eclipse project to support cmake structure")
 ADAPT_ECLIPSE_PROJECT()
 
 message("\n")

@@ -1,0 +1,5 @@
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/Release")
+file(GLOB source "src/*.c")
+add_library(mcp2515_driver STATIC ${source})
+target_include_directories(mcp2515_driver PUBLIC inc/)
+target_link_libraries(mcp2515_driver pcbVersion FreeRTOS hal)

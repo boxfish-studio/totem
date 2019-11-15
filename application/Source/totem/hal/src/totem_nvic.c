@@ -7,12 +7,18 @@
 
 #include "totem_nvic.h"
 
+#define EXTI_MAX    16
+
+static void (*gpio_callbacks[EXTI_MAX])(void) = {0};
+
 /**
  * @brief	Enable the interruptions used
  * @param	None
  * @return	None
  */
 void init_interrupts() {
+	uint8_t i;
+
 	NVIC_DisableIRQ(GPIO_EVEN_IRQn);
 	NVIC_ClearPendingIRQ(GPIO_EVEN_IRQn);
 	NVIC_SetPriority(GPIO_EVEN_IRQn, 6);
@@ -20,11 +26,26 @@ void init_interrupts() {
 
 	NVIC_DisableIRQ(GPIO_ODD_IRQn);
 	NVIC_ClearPendingIRQ(GPIO_ODD_IRQn);
-	NVIC_SetPriority(GPIO_ODD_IRQn, 4);
+	NVIC_SetPriority(GPIO_ODD_IRQn, 6);
 	NVIC_EnableIRQ(GPIO_ODD_IRQn);
 
     // USB Interrupt
 	NVIC_SetPriority(USB_IRQn, 6);
+	NVIC_EnableIRQ(USB_IRQn);
+
+	NVIC_SetPriority(DMA_IRQn, 6);
+
+	for (i = 0; i < EXTI_MAX; i++)
+		gpio_callbacks[i] = NULL;
+}
+
+void set_gpio_callback(uint8_t port, uint8_t pin, void (*callback)(void), uint8_t rising, uint8_t falling)
+{
+	if (gpio_callbacks[pin] == NULL) {
+	    GPIO_PinModeSet(port, pin, gpioModeInput, 0);
+	    GPIO_IntConfig(port, pin, rising, falling, 1);
+	}
+    gpio_callbacks[pin] = callback;
 }
 
 /**
@@ -33,8 +54,18 @@ void init_interrupts() {
  * @return	None
  */
 void GPIO_EVEN_IRQHandler() {
-	GPIO_PinOutClear(PORT_LED_GREEN, PIN_LED_GREEN);
-	GPIO_IntClear(GPIO_IntGet());
+    uint32_t flags = GPIO_IntGet();
+    for (int i = 0; i < EXTI_MAX; i += 2)
+    {
+        if (flags & (1 << i))
+        {
+            if (gpio_callbacks[i])
+            {
+                gpio_callbacks[i]();
+            }
+            GPIO_IntClear(1 << i);
+        }
+    }
 }
 
 /**
@@ -43,9 +74,16 @@ void GPIO_EVEN_IRQHandler() {
  * @return	None
  */
 void GPIO_ODD_IRQHandler() {
-	PRINT("Asynchronous button!")
-	while (1) {
-	}
-	GPIO_PinOutClear(PORT_LED_GREEN, PIN_LED_GREEN);
-	GPIO_IntClear(GPIO_IntGet());
+    uint32_t flags = GPIO_IntGet();
+    for (int i = 1; i < EXTI_MAX; i += 2)
+    {
+        if (flags & (1 << i))
+        {
+            if (gpio_callbacks[i])
+            {
+                gpio_callbacks[i]();
+            }
+            GPIO_IntClear(1 << i);
+        }
+    }
 }
