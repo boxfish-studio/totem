@@ -1,0 +1,5 @@
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/Release")
+file(GLOB source "src/*.c")
+add_library(services STATIC ${source})
+target_include_directories(services PUBLIC inc/)
+target_link_libraries(services hal mcp2515_driver)

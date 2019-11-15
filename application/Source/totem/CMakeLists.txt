@@ -1,0 +1,11 @@
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/Release")
+add_library(pcbVersion INTERFACE)
+target_include_directories(pcbVersion INTERFACE .)
+add_subdirectory(drivers)
+add_subdirectory(FreeRTOS)
+add_subdirectory(hal)
+
+add_subdirectory(lib/dma)
+add_subdirectory(lib/_stdio)
+add_subdirectory(lib/usb)
+add_subdirectory(lib/xmodem)

@@ -1,0 +1,100 @@
+/*
+ * 	service_usb_data_handler.c
+ *
+ * 	Created on: Oct 21, 2019
+ * 		Author: Miguel Villalba <mvillalba@boxfish.studio>, Agustin Tena <atena@boxfish.studio>
+ */
+
+#include <service_usb_data_handler.h>
+
+// RTOS Queues
+extern xQueueHandle q_xmodem_stack_out;
+extern xQueueHandle q_xmodem_stack_in;
+extern xSemaphoreHandle sem_xmodem_data_ready;
+
+static xTaskHandle service_handler;
+
+bool xmodem_dispatch_master_msg(uint8_t data[], uint8_t len);
+bool xmodem_send_slave_status_msg();
+
+/**
+ *
+ */
+void service_usb_data_handler_setup(const char * service_name,
+		UBaseType_t service_priority) {
+	xTaskCreate(service_usb_data_handler, service_name, 650, NULL,
+			service_priority, &service_handler);
+}
+
+void service_usb_data_handler(void *args) {
+	traceString stack_trace = INIT_STACKTRACE(USB_DATA_HANDLER_SERVICE_NAME);
+
+	xmodem_message_t in_data;
+	xmodem_message_t out_data = {XMODEM_SEND, 11, {'h', 'e', 'l', 'l', 'o', ' ', 'h', 'o', 's', 't', '!'}};
+	uint8_t rx_counter = 0;
+
+	while (1) {
+		// Wait for data to come in from usb_xmodem
+		xQueueReceive(q_xmodem_stack_out, &in_data, portMAX_DELAY);
+		PRINT(">> Service USB data handler running \n");
+
+		// Check whether data is meant for this task
+		if (in_data.type != XMODEM_RCV)
+			continue;
+
+		// Check type of data and take appropriate action
+		xQueueSend(q_xmodem_stack_in, &out_data, 200);
+		xSemaphoreGive(sem_xmodem_data_ready);
+		switch (in_data.data[0]) {
+		case XMODEM_MASTER_MSG:
+			PRINT ("service_usb_data_handler(): XMODEM_MASTER_MSG received\n");
+			xmodem_dispatch_master_msg(in_data.data, in_data.dat_len);
+			// Slave msgs half frequency that master msgs
+			rx_counter++;
+			if (rx_counter >= 2) {
+				rx_counter = 0;
+				xmodem_send_slave_status_msg();
+			}
+			break;
+		default:
+			break;
+		}
+
+		PRINT_STACKTRACE(stack_trace);
+	}
+}
+
+bool xmodem_dispatch_master_msg(uint8_t data[], uint8_t len) {
+
+	if (len < 2) {
+		PRINT("xmodem_dispatch_master_msg(): ERROR, not enough bytes received!\n");
+		return false;
+	}
+
+	switch (data[1]) {
+	case XMODEM_HOST_SUBMSG_STATUS:
+		// Set Master status msg
+		PRINT("xmodem_dispatch_production(): Received \"Host status msg\"\n");
+
+		// Handle host data
+		break;
+
+	default:
+		break;
+	}
+
+	return true;
+}
+
+bool xmodem_send_slave_status_msg() {
+	uint8_t send_data[XMODEM_SLAVE_MSG_STATUS_DATA_SIZE];
+
+	send_data[0] = 0;
+	send_data[1] = 0;
+	send_data[3] = 0;
+	send_data[4] = 0;
+
+	return xmodem_send_data(XMODEM_SLAVE_MSG, XMODEM_SLAVE_SUBMSG_STATUS,
+			send_data,
+			XMODEM_SLAVE_MSG_STATUS_DATA_SIZE);
+}
